@@ -43,18 +43,18 @@ export const EngineControlCenter: React.FC = () => {
   const fetchData = async () => {
     try {
       const [statusRes, queueRes, bankerRes, fefoRes, eventsRes] = await Promise.all([
-        api.getEngineStatus(),
-        api.getSchedulerQueue(),
-        api.getBankerState(),
-        api.getFEFOInventory(),
-        api.getEventLogs(),
+        api.getEngineStatus().catch(() => null),
+        api.getSchedulerQueue().catch(() => ({ lanes: { EMERGENCY: [], URGENT: [], ROUTINE: [] } })),
+        api.getBankerState().catch(() => null),
+        api.getFEFOInventory().catch(() => []),
+        api.getEventLogs().catch(() => null),
       ]);
 
-      setStatus(statusRes);
-      if (queueRes.lanes) setQueueLanes(queueRes.lanes);
-      setBanker(bankerRes);
-      setFefoUnits(fefoRes);
-      setEventsData(eventsRes);
+      if (statusRes) setStatus(statusRes);
+      if (queueRes && queueRes.lanes) setQueueLanes(queueRes.lanes);
+      if (bankerRes) setBanker(bankerRes);
+      if (Array.isArray(fefoRes)) setFefoUnits(fefoRes);
+      if (eventsRes) setEventsData(eventsRes);
     } catch (err) {
       console.error('Failed to fetch engine data', err);
     }

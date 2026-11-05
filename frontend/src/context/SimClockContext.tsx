@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { api } from '../services/api.js';
+import { api, API_BASE } from '../services/api.js';
 
 interface SimClockContextType {
   simTime: string;
@@ -39,7 +39,7 @@ export const SimClockProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     fetchClock();
 
     // Setup SSE listener
-    const eventSource = new EventSource('/api/stream');
+    const eventSource = new EventSource(`${API_BASE}/stream`);
 
     eventSource.onopen = () => {
       setSseConnected(true);

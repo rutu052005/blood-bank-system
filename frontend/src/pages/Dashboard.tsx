@@ -39,17 +39,17 @@ export const Dashboard: React.FC = () => {
     const fetchData = async () => {
       try {
         const [hRes, iRes, rRes, tRes, aRes] = await Promise.all([
-          api.getHospitals(),
-          api.getInventory(),
-          api.getRequests(),
-          api.getTransfers(),
-          api.getAlerts(),
+          api.getHospitals().catch(() => []),
+          api.getInventory().catch(() => []),
+          api.getRequests().catch(() => []),
+          api.getTransfers().catch(() => []),
+          api.getAlerts().catch(() => []),
         ]);
-        setHospitals(hRes);
-        setInventory(iRes);
-        setRequests(rRes);
-        setTransfers(tRes);
-        setAlerts(aRes);
+        if (Array.isArray(hRes)) setHospitals(hRes);
+        if (Array.isArray(iRes)) setInventory(iRes);
+        if (Array.isArray(rRes)) setRequests(rRes);
+        if (Array.isArray(tRes)) setTransfers(tRes);
+        if (Array.isArray(aRes)) setAlerts(aRes);
       } catch (err) {
         console.error('Failed to load dashboard data', err);
       } finally {

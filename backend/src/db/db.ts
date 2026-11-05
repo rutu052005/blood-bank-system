@@ -297,6 +297,40 @@ class InMemoryDB {
     };
   }
 
+  // Erase all operational data (inventory, requests, transfers, alerts, movements, holds)
+  public eraseData(keepAdmin: boolean = true): void {
+    this.inventory = [];
+    this.holds = [];
+    this.movements = [];
+    this.expiryStates = [];
+    this.requests = [];
+    this.transfers = [];
+    this.alerts = [];
+    this.events = [];
+    this.schedulerRuns = [];
+    this.matchResults = [];
+    this.redistributionSuggestions = [];
+    this.notificationDeliveries = [];
+    this.lockedRowIds.clear();
+
+    if (!keepAdmin) {
+      this.users = [];
+      this.hospitals = [];
+    } else {
+      this.users = this.users.filter(u => u.role === 'SYSTEM_ADMIN');
+    }
+
+    this.auditLogs.push({
+      id: uuidv4(),
+      user_id: 'U006',
+      action: 'DATABASE_ERASED',
+      entity_type: 'SYSTEM',
+      entity_id: 'SYS',
+      details: { keepAdmin, timestamp: new Date().toISOString() },
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   // Row Lock Simulator (SELECT ... FOR UPDATE)
   public async acquireRowLocks(ids: string[]): Promise<void> {
     // Sort in ascending order to prevent deadlocks as mandated by Section 5

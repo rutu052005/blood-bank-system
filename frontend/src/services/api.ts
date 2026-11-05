@@ -1,4 +1,4 @@
-const API_BASE = '/api';
+export const API_BASE = (import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api');
 
 export function getToken(): string | null {
   return localStorage.getItem('token');
@@ -91,6 +91,7 @@ export const api = {
   getAuditLogs: () => request<any[]>('/audit-logs'),
   getReport: (type: string) => request<any>(`/reports/${type}`),
   getDatabaseTables: () => request<any>('/database/tables'),
+  eraseDatabase: (keepAdmin: boolean = true) => request<any>('/database/erase', { method: 'POST', body: JSON.stringify({ keepAdmin }) }),
 
   // Simulation & Scenarios
   advanceSimTime: (hours: number) => request<any>('/sim/advance', { method: 'POST', body: JSON.stringify({ hours }) }),

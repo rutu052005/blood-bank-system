@@ -12,6 +12,7 @@ import { ExpiryEngine } from '../engines/expiry.engine.js';
 import { RequestSchedulingEngine } from '../engines/request_scheduling.engine.js';
 import { ScenarioRunnerService } from '../services/scenario_runner.service.js';
 import { v4 as uuidv4 } from 'uuid';
+import { supabase } from '../db/supabase.js';
 
 const router = Router();
 
@@ -671,20 +672,92 @@ router.get('/reports/:type', authenticateToken, (req: Request, res: Response) =>
   }
 });
 
-router.get('/database/tables', authenticateToken, authorizeRoles('SYSTEM_ADMIN'), (req: Request, res: Response) => {
+router.get('/database/tables', authenticateToken, authorizeRoles('SYSTEM_ADMIN'), async (req: Request, res: Response) => {
   try {
+    if (supabase) {
+      try {
+        const [h, u, d, inv, holds, mov, reqs, tr, al, logs] = await Promise.all([
+          supabase.from('hospitals').select('*'),
+          supabase.from('users').select('id, name, email, role, hospital_id, status, created_at'),
+          supabase.from('hospital_distances').select('*'),
+          supabase.from('blood_inventory').select('*'),
+          supabase.from('inventory_holds').select('*'),
+          supabase.from('inventory_movements').select('*'),
+          supabase.from('blood_requests').select('*'),
+          supabase.from('transfers').select('*'),
+          supabase.from('alerts').select('*'),
+          supabase.from('audit_logs').select('*'),
+        ]);
+
+        if (!h.error && !u.error) {
+          return res.json({
+            provider: 'Supabase PostgreSQL (Live Connected)',
+            supabaseUrl: config.supabaseUrl,
+            tables: [
+              { name: 'hospitals', count: h.data?.length || 0, data: h.data || [] },
+              { name: 'users', count: u.data?.length || 0, data: u.data || [] },
+              { name: 'hospital_distances', count: d.data?.length || 0, data: d.data || [] },
+              { name: 'blood_inventory', count: inv.data?.length || 0, data: inv.data || [] },
+              { name: 'inventory_holds', count: holds.data?.length || 0, data: holds.data || [] },
+              { name: 'inventory_movements', count: mov.data?.length || 0, data: mov.data || [] },
+              { name: 'blood_requests', count: reqs.data?.length || 0, data: reqs.data || [] },
+              { name: 'transfers', count: tr.data?.length || 0, data: tr.data || [] },
+              { name: 'alerts', count: al.data?.length || 0, data: al.data || [] },
+              { name: 'audit_logs', count: logs.data?.length || 0, data: logs.data || [] },
+            ],
+          });
+        }
+      } catch (sbErr) {
+        console.warn('[Supabase] Warning reading live tables:', sbErr);
+      }
+    }
+
     res.json({
+      provider: 'High-Performance In-Memory DB Engine',
       tables: [
         { name: 'hospitals', count: db.hospitals.length, data: db.hospitals },
         { name: 'users', count: db.users.length, data: db.users.map(({ password_hash, ...u }) => u) },
+        { name: 'hospital_distances', count: db.distances.length, data: db.distances },
         { name: 'blood_inventory', count: db.inventory.length, data: db.inventory },
+        { name: 'inventory_holds', count: db.holds.length, data: db.holds },
+        { name: 'inventory_movements', count: db.movements.length, data: db.movements },
         { name: 'blood_requests', count: db.requests.length, data: db.requests },
         { name: 'transfers', count: db.transfers.length, data: db.transfers },
         { name: 'alerts', count: db.alerts.length, data: db.alerts },
-        { name: 'inventory_movements', count: db.movements.length, data: db.movements },
-        { name: 'engine_events', count: db.events.length, data: db.events },
         { name: 'audit_logs', count: db.auditLogs.length, data: db.auditLogs },
       ],
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/database/erase', authenticateToken, authorizeRoles('SYSTEM_ADMIN'), async (req: Request, res: Response) => {
+  try {
+    const { keepAdmin = true } = req.body || {};
+    db.eraseData(keepAdmin);
+
+    // If Supabase client is connected, also attempt to purge Supabase tables
+    if (supabase) {
+      try {
+        await supabase.from('alerts').delete().neq('id', '0');
+        await supabase.from('transfers').delete().neq('id', '0');
+        await supabase.from('request_items').delete().neq('id', '0');
+        await supabase.from('blood_requests').delete().neq('id', '0');
+        await supabase.from('inventory_movements').delete().neq('id', '0');
+        await supabase.from('inventory_holds').delete().neq('id', '0');
+        await supabase.from('blood_inventory').delete().neq('id', '0');
+      } catch (sbErr) {
+        console.warn('[Supabase] Warning during Supabase table purge:', sbErr);
+      }
+    }
+
+    res.json({
+      message: 'All inventory, requests, movements, holds, and alerts have been erased successfully.',
+      remainingUsers: db.users.length,
+      remainingHospitals: db.hospitals.length,
+      remainingInventory: db.inventory.length,
+      remainingRequests: db.requests.length,
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
