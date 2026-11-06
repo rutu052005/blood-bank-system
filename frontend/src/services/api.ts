@@ -32,7 +32,6 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     });
 
     if (!response.ok) {
-      // If 405 (Method Not Allowed - static host without backend) or 404/500, fallback to mockStore
       if (response.status === 405 || response.status === 404 || response.status >= 500) {
         return handleMockFallback<T>(endpoint, options);
       }
@@ -42,7 +41,6 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
     return response.json();
   } catch (err: any) {
-    // If fetch failed completely (network error / offline), fallback to mockStore
     return handleMockFallback<T>(endpoint, options);
   }
 }
@@ -59,6 +57,20 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
 
   // 2. Hospitals & Users
   if (endpoint.startsWith('/hospitals')) {
+    if (options.method === 'POST') {
+      const data = options.body ? JSON.parse(options.body as string) : {};
+      const newHosp = {
+        id: 'H' + (mockStore.hospitals.length + 1).toString().padStart(3, '0'),
+        name: data.name || 'New Hospital',
+        city: data.city || 'City',
+        address: data.address || 'Address',
+        contact_number: data.contact_number || '+91 80 0000 0000',
+        status: 'ACTIVE' as const,
+        created_at: new Date().toISOString(),
+      };
+      mockStore.hospitals.push(newHosp);
+      return newHosp as unknown as T;
+    }
     return mockStore.hospitals as unknown as T;
   }
   if (endpoint === '/users') {
@@ -99,7 +111,25 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
   if (endpoint.startsWith('/inventory')) {
     if (options.method === 'POST') {
       const data = options.body ? JSON.parse(options.body as string) : {};
-      const newUnit = { id: 'INV' + (mockStore.inventory.length + 1).toString().padStart(3, '0'), ...data, available_quantity: data.quantity_total || 5 };
+      const hospitalName = mockStore.hospitals.find(h => h.id === data.hospital_id)?.name || 'KLE Hospital';
+      const qty = Number(data.quantity_total) || 5;
+      const newUnit = {
+        id: 'INV' + (mockStore.inventory.length + 1).toString().padStart(3, '0'),
+        hospital_id: data.hospital_id || 'H001',
+        hospital_name: hospitalName,
+        blood_group: data.blood_group || 'O+',
+        component: data.component || 'RBC',
+        quantity_total: qty,
+        quantity_held: 0,
+        quantity_in_transit: 0,
+        available_quantity: qty,
+        collection_date: data.collection_date || new Date().toISOString().split('T')[0],
+        expiry_date: data.expiry_date || new Date(Date.now() + 35 * 86400000).toISOString().split('T')[0],
+        status: 'AVAILABLE' as const,
+        tier: 'VALID' as const,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
       mockStore.inventory.unshift(newUnit);
       return newUnit as unknown as T;
     }
@@ -109,29 +139,73 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
   // 5. Requests
   if (endpoint.startsWith('/requests')) {
     if (options.method === 'POST' && endpoint.includes('/status')) {
+      const id = endpoint.split('/')[2];
+      const data = options.body ? JSON.parse(options.body as string) : {};
+      const req = mockStore.requests.find(r => r.id === id);
+      if (req && data.status) {
+        req.status = data.status;
+      }
       return { success: true } as unknown as T;
     }
     if (options.method === 'POST') {
       const data = options.body ? JSON.parse(options.body as string) : {};
-      const newReq = { id: 'REQ' + (mockStore.requests.length + 1).toString().padStart(3, '0'), ...data, status: 'PENDING' };
+      const hospitalName = mockStore.hospitals.find(h => h.id === data.requesting_hospital_id)?.name || 'District Hospital';
+      const newReq = {
+        id: 'REQ' + (mockStore.requests.length + 1).toString().padStart(3, '0'),
+        requesting_hospital_id: data.requesting_hospital_id || 'H002',
+        requesting_hospital_name: hospitalName,
+        priority: data.priority || 'URGENT',
+        status: 'PENDING' as const,
+        required_by: new Date(Date.now() + 12 * 3600000).toISOString(),
+        aging_points: 0,
+        promoted_by_aging: false,
+        preempted_count: 0,
+        compensation_boost: 0,
+        effective_score: data.priority === 'EMERGENCY' ? 95 : data.priority === 'URGENT' ? 70 : 40,
+        items: (data.items && data.items.length > 0) ? data.items.map((it: any, i: number) => ({
+          id: 'ITEM' + Date.now() + i,
+          request_id: 'REQ' + (mockStore.requests.length + 1).toString().padStart(3, '0'),
+          blood_group: it.blood_group || 'O+',
+          component: it.component || 'RBC',
+          quantity: it.quantity || 2,
+        })) : [{
+          id: 'ITEM' + Date.now(),
+          request_id: 'REQ' + (mockStore.requests.length + 1).toString().padStart(3, '0'),
+          blood_group: 'O+',
+          component: 'RBC',
+          quantity: 2,
+        }],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
       mockStore.requests.unshift(newReq);
       return newReq as unknown as T;
     }
     if (endpoint.includes('/matches')) {
       return [
         {
+          hospital_id: 'H001',
+          hospital_name: 'KLE Hospital',
           inventory_id: 'INV001',
-          source_hospital_id: 'H001',
-          source_hospital_name: 'KLE Hospital',
           blood_group: 'O+',
           component: 'RBC',
           quantity_available: 10,
+          allocated_quantity: 2,
+          expiry_date: new Date(Date.now() + 30 * 86400000).toISOString(),
+          days_to_expiry: 30,
           distance_km: 5.0,
+          shortest_path: ['H002', 'H001'],
           total_score: 94.2,
           expiry_score: 95.0,
           distance_score: 98.0,
-          quantity_score: 90.0,
-          recommendation: 'Potential Match — Requires Authorized Review'
+          fit_score: 90.0,
+          checks: {
+            blood_group_match: true,
+            component_match: true,
+            quantity_available: true,
+            inventory_available: true,
+            viable_before_expiry: true,
+          }
         }
       ] as unknown as T;
     }
@@ -141,7 +215,23 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
   // 6. Transfers
   if (endpoint.startsWith('/transfers')) {
     if (options.method === 'POST') {
-      return { success: true } as unknown as T;
+      const data = options.body ? JSON.parse(options.body as string) : {};
+      const newTrf = {
+        id: 'TRF' + (mockStore.transfers.length + 1).toString().padStart(3, '0'),
+        request_id: data.request_id || 'REQ001',
+        source_hospital_id: data.source_hospital_id || 'H001',
+        source_hospital_name: 'KLE Hospital',
+        destination_hospital_id: data.destination_hospital_id || 'H002',
+        destination_hospital_name: 'District Hospital',
+        inventory_id: data.inventory_id || 'INV001',
+        quantity: data.quantity || 2,
+        priority: 'URGENT' as const,
+        status: 'IN_TRANSIT' as const,
+        dispatched_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      };
+      mockStore.transfers.unshift(newTrf);
+      return newTrf as unknown as T;
     }
     return mockStore.transfers as unknown as T;
   }
@@ -154,6 +244,9 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
     return mockStore.alerts as unknown as T;
   }
   if (endpoint.includes('/acknowledge')) {
+    const id = endpoint.split('/')[2];
+    const alert = mockStore.alerts.find(a => a.id === id);
+    if (alert) alert.is_acknowledged = true;
     return { success: true } as unknown as T;
   }
 
@@ -186,7 +279,6 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
     } as unknown as T;
   }
 
-  // Default fallback
   return [] as unknown as T;
 }
 
