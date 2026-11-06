@@ -3,9 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build:frontend": "npm --prefix frontend install && npm --prefix frontend run build",
-    "build:api": "npx esbuild backend/src/serverless.ts --bundle --platform=node --target=node18 --outfile=api/index.js --format=cjs --footer:js=\"module.exports = app; module.exports.default = app;\"",
-    "build": "npm run build:frontend",
+    "build": "npm --prefix frontend install && npm --prefix frontend run build -- --outDir ../dist --emptyOutDir",
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev"
   }
