@@ -31,15 +31,19 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       headers,
     });
 
-    if (!response.ok) {
-      if (response.status === 405 || response.status === 404 || response.status >= 500) {
-        return handleMockFallback<T>(endpoint, options);
-      }
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error ${response.status}`);
+    const contentType = response.headers.get('content-type') || '';
+
+    // If server returned non-OK, or returned HTML (static SPA index.html), use mock fallback
+    if (!response.ok || contentType.includes('text/html') || response.status === 405 || response.status === 404) {
+      return handleMockFallback<T>(endpoint, options);
     }
 
-    return response.json();
+    const text = await response.text();
+    try {
+      return JSON.parse(text) as T;
+    } catch {
+      return handleMockFallback<T>(endpoint, options);
+    }
   } catch (err: any) {
     return handleMockFallback<T>(endpoint, options);
   }
