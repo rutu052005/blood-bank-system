@@ -1,0 +1,179 @@
+import { Hospital, User, BloodUnit, BloodRequest, Transfer, Alert } from '../types/index.js';
+
+const now = new Date();
+const addDays = (d: number) => {
+  const dt = new Date(now);
+  dt.setDate(dt.getDate() + d);
+  return dt.toISOString().split('T')[0];
+};
+
+export const MOCK_HOSPITALS: Hospital[] = [
+  { id: 'H001', name: 'KLE Hospital', city: 'Belagavi', address: 'JNMC Campus, Nehru Nagar, Belagavi', contact_number: '+91 831 247 3777', status: 'ACTIVE', created_at: now.toISOString() },
+  { id: 'H002', name: 'District Hospital', city: 'Belagavi', address: 'APMC Road, Belagavi', contact_number: '+91 831 240 4000', status: 'ACTIVE', created_at: now.toISOString() },
+  { id: 'H003', name: 'City Care Hospital', city: 'Hubballi', address: 'Vidya Nagar, Hubballi', contact_number: '+91 836 225 8888', status: 'ACTIVE', created_at: now.toISOString() },
+  { id: 'H004', name: 'Sahyadri Medical Center', city: 'Dharwad', address: 'PB Road, Dharwad', contact_number: '+91 836 244 5555', status: 'ACTIVE', created_at: now.toISOString() },
+  { id: 'H005', name: 'Shree Hospital', city: 'Bengaluru', address: 'Rajajinagar, Bengaluru', contact_number: '+91 80 2332 1111', status: 'ACTIVE', created_at: now.toISOString() },
+];
+
+export const MOCK_USERS: User[] = [
+  { id: 'U006', name: 'Dr. Suresh Admin', email: 'admin@demo.local', role: 'SYSTEM_ADMIN', hospital_id: 'H001', hospital_name: 'KLE Hospital', status: 'ACTIVE' },
+  { id: 'U002', name: 'Priya Shah', email: 'priya@demo.local', role: 'REQUEST_MANAGER', hospital_id: 'H002', hospital_name: 'District Hospital', status: 'ACTIVE' },
+  { id: 'U001', name: 'Anil Kumar', email: 'anil@demo.local', role: 'INVENTORY_MANAGER', hospital_id: 'H001', hospital_name: 'KLE Hospital', status: 'ACTIVE' },
+  { id: 'U004', name: 'Dr. Sneha Joshi', email: 'sneha@demo.local', role: 'HOSPITAL_ADMIN', hospital_id: 'H004', hospital_name: 'Sahyadri Medical Center', status: 'ACTIVE' },
+];
+
+export const MOCK_INVENTORY: BloodUnit[] = [
+  { id: 'INV001', hospital_id: 'H001', hospital_name: 'KLE Hospital', blood_group: 'O+', component: 'RBC', quantity_total: 10, quantity_held: 0, quantity_in_transit: 0, available_quantity: 10, collection_date: addDays(-5), expiry_date: addDays(30), status: 'AVAILABLE', tier: 'VALID', created_at: now.toISOString(), updated_at: now.toISOString() },
+  { id: 'INV002', hospital_id: 'H001', hospital_name: 'KLE Hospital', blood_group: 'A+', component: 'RBC', quantity_total: 5, quantity_held: 0, quantity_in_transit: 0, available_quantity: 5, collection_date: addDays(-20), expiry_date: addDays(5), status: 'AVAILABLE', tier: 'NEAR_EXPIRY', created_at: now.toISOString(), updated_at: now.toISOString() },
+  { id: 'INV003', hospital_id: 'H001', hospital_name: 'KLE Hospital', blood_group: 'B+', component: 'PLASMA', quantity_total: 15, quantity_held: 0, quantity_in_transit: 0, available_quantity: 15, collection_date: addDays(-10), expiry_date: addDays(120), status: 'AVAILABLE', tier: 'VALID', created_at: now.toISOString(), updated_at: now.toISOString() },
+  { id: 'INV004', hospital_id: 'H002', hospital_name: 'District Hospital', blood_group: 'O+', component: 'RBC', quantity_total: 4, quantity_held: 0, quantity_in_transit: 0, available_quantity: 4, collection_date: addDays(-30), expiry_date: addDays(2), status: 'AVAILABLE', tier: 'CRITICAL', created_at: now.toISOString(), updated_at: now.toISOString() },
+  { id: 'INV005', hospital_id: 'H002', hospital_name: 'District Hospital', blood_group: 'O-', component: 'RBC', quantity_total: 6, quantity_held: 0, quantity_in_transit: 0, available_quantity: 6, collection_date: addDays(-10), expiry_date: addDays(25), status: 'AVAILABLE', tier: 'VALID', created_at: now.toISOString(), updated_at: now.toISOString() },
+  { id: 'INV006', hospital_id: 'H003', hospital_name: 'City Care Hospital', blood_group: 'A+', component: 'RBC', quantity_total: 8, quantity_held: 0, quantity_in_transit: 0, available_quantity: 8, collection_date: addDays(-15), expiry_date: addDays(20), status: 'AVAILABLE', tier: 'VALID', created_at: now.toISOString(), updated_at: now.toISOString() },
+  { id: 'INV007', hospital_id: 'H003', hospital_name: 'City Care Hospital', blood_group: 'AB+', component: 'PLASMA', quantity_total: 10, quantity_held: 3, quantity_in_transit: 3, available_quantity: 4, collection_date: addDays(-5), expiry_date: addDays(150), status: 'AVAILABLE', tier: 'VALID', created_at: now.toISOString(), updated_at: now.toISOString() },
+  { id: 'INV008', hospital_id: 'H003', hospital_name: 'City Care Hospital', blood_group: 'O-', component: 'RBC', quantity_total: 4, quantity_held: 2, quantity_in_transit: 0, available_quantity: 2, collection_date: addDays(-12), expiry_date: addDays(18), status: 'AVAILABLE', tier: 'VALID', created_at: now.toISOString(), updated_at: now.toISOString() },
+  { id: 'INV009', hospital_id: 'H004', hospital_name: 'Sahyadri Medical Center', blood_group: 'B+', component: 'PLASMA', quantity_total: 6, quantity_held: 0, quantity_in_transit: 0, available_quantity: 6, collection_date: addDays(-2), expiry_date: addDays(180), status: 'AVAILABLE', tier: 'VALID', created_at: now.toISOString(), updated_at: now.toISOString() },
+  { id: 'INV010', hospital_id: 'H005', hospital_name: 'Shree Hospital', blood_group: 'O-', component: 'RBC', quantity_total: 5, quantity_held: 0, quantity_in_transit: 0, available_quantity: 5, collection_date: addDays(-25), expiry_date: addDays(3), status: 'AVAILABLE', tier: 'CRITICAL', created_at: now.toISOString(), updated_at: now.toISOString() },
+];
+
+export const MOCK_REQUESTS: BloodRequest[] = [
+  {
+    id: 'REQ001',
+    requesting_hospital_id: 'H002',
+    requesting_hospital_name: 'District Hospital',
+    priority: 'URGENT',
+    status: 'PENDING',
+    required_by: new Date(now.getTime() + 12 * 3600000).toISOString(),
+    aging_points: 10,
+    promoted_by_aging: false,
+    preempted_count: 0,
+    compensation_boost: 0,
+    effective_score: 75,
+    items: [{ id: 'ITEM001', request_id: 'REQ001', blood_group: 'O+', component: 'RBC', quantity: 2 }],
+    created_at: now.toISOString(),
+    updated_at: now.toISOString(),
+  },
+  {
+    id: 'REQ002',
+    requesting_hospital_id: 'H004',
+    requesting_hospital_name: 'Sahyadri Medical Center',
+    priority: 'ROUTINE',
+    status: 'PENDING',
+    required_by: new Date(now.getTime() + 24 * 3600000).toISOString(),
+    aging_points: 4,
+    promoted_by_aging: false,
+    preempted_count: 0,
+    compensation_boost: 0,
+    effective_score: 40,
+    items: [{ id: 'ITEM002', request_id: 'REQ002', blood_group: 'B+', component: 'PLASMA', quantity: 4 }],
+    created_at: now.toISOString(),
+    updated_at: now.toISOString(),
+  },
+  {
+    id: 'REQ003',
+    requesting_hospital_id: 'H001',
+    requesting_hospital_name: 'KLE Hospital',
+    priority: 'EMERGENCY',
+    status: 'MATCHED',
+    required_by: new Date(now.getTime() + 2 * 3600000).toISOString(),
+    aging_points: 25,
+    promoted_by_aging: false,
+    preempted_count: 0,
+    compensation_boost: 0,
+    effective_score: 95,
+    items: [{ id: 'ITEM003', request_id: 'REQ003', blood_group: 'O-', component: 'RBC', quantity: 2 }],
+    created_at: now.toISOString(),
+    updated_at: now.toISOString(),
+  }
+];
+
+export const MOCK_TRANSFERS: Transfer[] = [
+  {
+    id: 'TRF001',
+    request_id: 'REQ003',
+    source_hospital_id: 'H003',
+    source_hospital_name: 'City Care Hospital',
+    destination_hospital_id: 'H001',
+    destination_hospital_name: 'KLE Hospital',
+    inventory_id: 'INV007',
+    quantity: 3,
+    priority: 'EMERGENCY',
+    status: 'IN_TRANSIT',
+    dispatched_at: now.toISOString(),
+    created_at: now.toISOString(),
+  }
+];
+
+export const MOCK_ALERTS: Alert[] = [
+  { id: 'ALT001', severity: 'CRITICAL', type: 'EXPIRY', title: 'Critical Expiry Alert', message: 'INV004 (O+ RBC at District Hospital) expires in 48 hours!', is_acknowledged: false, escalation_level: 2, created_at: now.toISOString() },
+  { id: 'ALT002', severity: 'WARNING', type: 'EXPIRY', title: 'Near Expiry Alert', message: 'INV010 (O- RBC at Shree Hospital) enters near-expiry threshold (3 days remaining).', is_acknowledged: false, escalation_level: 1, created_at: now.toISOString() },
+];
+
+export class MockDataStore {
+  hospitals = [...MOCK_HOSPITALS];
+  users = [...MOCK_USERS];
+  inventory = [...MOCK_INVENTORY];
+  requests = [...MOCK_REQUESTS];
+  transfers = [...MOCK_TRANSFERS];
+  alerts = [...MOCK_ALERTS];
+  offsetHours = 0;
+  enginePaused = { 'inventory-sync': false, matching: false, expiry: false, scheduler: false };
+
+  login(credentials: { email: string; password?: string }) {
+    const user = this.users.find(u => u.email.toLowerCase() === (credentials.email || '').toLowerCase()) || this.users[0];
+    const token = 'demo-jwt-token-' + user.id;
+    localStorage.setItem('demo_user', JSON.stringify(user));
+    return { token, user };
+  }
+
+  getCurrentUser() {
+    const saved = localStorage.getItem('demo_user');
+    if (saved) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return this.users[0];
+  }
+
+  getEngineStatus() {
+    return {
+      inventorySync: { status: this.enginePaused['inventory-sync'] ? 'PAUSED' : 'RUNNING', singleWriterLock: 'FREE' },
+      matching: { status: this.enginePaused['matching'] ? 'PAUSED' : 'RUNNING', algorithm: 'Dijkstra Min-Heap (DSA)' },
+      expiry: { status: this.enginePaused['expiry'] ? 'PAUSED' : 'RUNNING', trackedUnits: this.inventory.length },
+      scheduler: { status: this.enginePaused['scheduler'] ? 'PAUSED' : 'RUNNING', activeQueue: 'MLFQ (OS Priority Levels 0-2)' },
+      clock: {
+        now: new Date(Date.now() + this.offsetHours * 3600000).toISOString(),
+        offsetHours: this.offsetHours,
+      }
+    };
+  }
+
+  getSchedulerQueue() {
+    return {
+      level0_emergency: this.requests.filter(r => r.priority === 'EMERGENCY'),
+      level1_urgent: this.requests.filter(r => r.priority === 'URGENT'),
+      level2_routine: this.requests.filter(r => r.priority === 'ROUTINE'),
+    };
+  }
+
+  getBankerState() {
+    return {
+      safe: true,
+      safeSequence: ['REQ003', 'REQ001', 'REQ002'],
+      available: { 'O+': 10, 'A+': 5, 'B+': 15, 'O-': 6 },
+      maxNeed: { REQ001: { 'O+': 2 }, REQ002: { 'B+': 4 }, REQ003: { 'O-': 2 } },
+      allocated: { REQ001: { 'O+': 0 }, REQ002: { 'B+': 0 }, REQ003: { 'O-': 2 } }
+    };
+  }
+
+  runAllScenarios() {
+    return [
+      { id: 'S1', name: 'Emergency Preemption', status: 'PASSED', details: 'Preempted tentative hold HOLD001, granted EMERGENCY request REQ003. +15 compensation boost applied to victim REQ005.' },
+      { id: 'S2', name: 'Aging Math', status: 'PASSED', details: 'Promoted ROUTINE request REQ002 to URGENT priority queue after exceeding 12-hour wait threshold without starvation.' },
+      { id: 'S3', name: 'Banker Avoidance', status: 'PASSED', details: 'Executed multi-resource safety check. Safe sequence validated: [REQ003 -> REQ001 -> REQ002]. Deadlock state avoided.' },
+      { id: 'S4', name: 'Concurrency Lock Ordering', status: 'PASSED', details: 'Simulated 20 concurrent allocation requests. Single-writer ascending resource mutex verified with 100% ledger consistency.' },
+      { id: 'S5', name: 'Expiry Fast-Forward', status: 'PASSED', details: 'Advanced clock by +3 days. Unit INV004 transitioned to CRITICAL tier. Escalated alert ALT001 dispatched to blood bank dashboard.' },
+      { id: 'S6', name: 'End-to-End Fulfillment', status: 'PASSED', details: 'Full lifecycle verified: Request -> Dijkstra Shortest Path Matched -> Authorized -> In-Transit -> Received & Stock Reconciled.' }
+    ];
+  }
+}
+
+export const mockStore = new MockDataStore();
