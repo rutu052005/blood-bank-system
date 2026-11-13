@@ -8,7 +8,6 @@ import {
   ArrowRight,
   Building2,
   CheckCircle2,
-  ExternalLink,
   ChevronDown,
   ChevronUp,
   Play,
@@ -19,17 +18,23 @@ import {
   HelpCircle,
   Network,
   Cpu,
-  ArrowUp,
-  Truck,
   HeartPulse,
   Activity,
-  CalendarCheck,
-  AlertCircle
+  Globe,
+  BarChart3,
+  Hourglass,
+  Zap,
+  Lock,
+  ExternalLink
 } from 'lucide-react';
+import { EngineWorkflowModal, EngineId } from '../components/EngineWorkflowModal.js';
 
 export const LandingPage: React.FC = () => {
   const { user, login } = useAuth();
   const navigate = useNavigate();
+
+  // Engine Interactive Workflow Modal State
+  const [selectedEngineModal, setSelectedEngineModal] = useState<EngineId | null>(null);
 
   // Interactive Live Demonstration State
   const [selectedDemo, setSelectedDemo] = useState<string>('D1');
@@ -93,83 +98,83 @@ export const LandingPage: React.FC = () => {
 
   const faqs = [
     {
-      q: 'How does the platform connect and coordinate regional hospitals?',
-      a: 'BloodResource Sync connects accredited hospital blood banks through a secure, synchronized network. Medical facilities can view real-time regional blood availability, request critical units during emergencies, and track inter-hospital transfers transparently.'
+      q: 'How does the platform coordinate blood sharing between regional hospitals?',
+      a: 'The platform connects accredited hospital blood banks through a secure, synchronized network. Medical centers can view live regional blood availability, request critical units during trauma emergencies, and track inter-hospital transfers transparently.'
     },
     {
       q: 'How does the system prevent two hospitals from reserving the same blood unit?',
-      a: 'The platform uses real-time synchronized reservation locking. As soon as an emergency request is initiated, the designated blood unit is placed on instant exclusive hold across the entire regional network, eliminating accidental double-reservations and inventory mismatches.'
+      a: 'The Inventory Sync Engine uses single-writer row-level locking. As soon as an emergency request is initiated, the designated blood unit is placed on instant exclusive hold across the entire regional network, eliminating accidental double-reservations and inventory mismatches.'
     },
     {
-      q: 'How does the system select the best hospital to source blood from?',
-      a: 'When an urgent request is placed, the smart routing system evaluates real-world driving distance, transit travel time, and component shelf-life to suggest the optimal nearest hospital that has compatible, ready-to-dispatch units.'
+      q: 'How does the Match and Expiry Engine select the best hospital?',
+      a: 'The Match and Expiry Engine evaluates real-world driving distance via highway network graphs and component shelf-life to suggest the optimal nearest hospital that has compatible, ready-to-dispatch units.'
     },
     {
       q: 'What occurs when an emergency arises while stock is tentatively on hold?',
-      a: 'Life-threatening trauma emergencies receive top clinical priority. The system can redirect non-urgent holds to save immediate surgical patients, while automatically re-queuing the original request with elevated priority so no patient is overlooked.'
+      a: 'Life-threatening trauma emergencies receive top clinical priority. The Priority Scheduling Engine preempts non-urgent holds to save immediate surgical patients, while awarding a +15 compensation boost to the original request so it is scheduled next.'
     },
     {
-      q: 'How does the platform prevent blood units from expiring on the shelves?',
-      a: 'The system actively tracks shelf-life and expiration dates for every donation. Units approaching their expiration threshold are automatically highlighted and recommended for upcoming scheduled transfusions, dramatically reducing medical waste.'
+      q: 'How does the platform prevent blood units from expiring on hospital shelves?',
+      a: 'The system actively tracks shelf-life and expiration dates for every donation using a First-Expiry First-Out (FEFO) protocol. Units approaching their expiration threshold are automatically highlighted and recommended for upcoming scheduled transfusions.'
     }
   ];
 
   return (
-    <div className="min-h-screen bg-[#030712] text-slate-100 font-sans selection:bg-emerald-500 selection:text-black relative">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-[#00b4d8] selection:text-black relative">
       
       {/* ============================================================ */}
-      {/* 1. TOP NAVIGATION BAR (Clean, Professional & Understandable) */}
+      {/* 1. TOP NAVIGATION BAR (TCS CodeVita Style: Dark Bar + Cyan Login) */}
       {/* ============================================================ */}
-      <header className="sticky top-0 z-50 bg-black/90 backdrop-blur-xl border-b border-zinc-800/80">
+      <header className="sticky top-0 z-50 bg-[#000000] border-b border-zinc-800 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           
           {/* Brand Logo */}
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-green-400 flex items-center justify-center font-black text-black shadow-lg shadow-emerald-500/25 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#00b4d8] to-emerald-400 flex items-center justify-center font-black text-black shadow-lg shadow-cyan-500/25 group-hover:scale-105 transition-transform">
               <Droplets className="w-6 h-6 text-black" />
             </div>
             <div>
               <div className="flex items-center gap-1 font-black text-xl tracking-tight text-white">
-                <span>BloodResource</span>
-                <span className="text-emerald-400 font-black">Sync™</span>
+                <span>VitalSync</span>
+                <span className="text-[#00b4d8] font-bold">™</span>
               </div>
               <div className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase">
-                EMERGENCY HEALTHCARE LOGISTICS
+                BLOOD RESOURCE NETWORK
               </div>
             </div>
           </Link>
 
           {/* Center Navigation Links (Clean, User-Friendly Labels) */}
           <nav className="hidden lg:flex items-center gap-7 text-xs font-bold tracking-wider text-zinc-300 uppercase font-mono">
-            <button onClick={() => scrollToSection('hero')} className="hover:text-emerald-400 transition cursor-pointer">
+            <button onClick={() => scrollToSection('hero')} className="hover:text-[#00b4d8] transition cursor-pointer">
               HOME
             </button>
-            <button onClick={() => scrollToSection('overview')} className="hover:text-emerald-400 transition cursor-pointer">
-              OVERVIEW
+            <button onClick={() => scrollToSection('overview')} className="hover:text-[#00b4d8] transition cursor-pointer">
+              ABOUT
             </button>
-            <button onClick={() => scrollToSection('capabilities')} className="hover:text-emerald-400 transition cursor-pointer">
-              FEATURES
+            <button onClick={() => scrollToSection('engines')} className="hover:text-[#00b4d8] transition cursor-pointer">
+              4 ENGINES
             </button>
-            <button onClick={() => scrollToSection('hospitals')} className="hover:text-emerald-400 transition cursor-pointer">
+            <button onClick={() => scrollToSection('hospitals')} className="hover:text-[#00b4d8] transition cursor-pointer">
               HOSPITALS
             </button>
-            <button onClick={() => scrollToSection('simulations')} className="hover:text-emerald-400 transition cursor-pointer">
+            <button onClick={() => scrollToSection('simulations')} className="hover:text-[#00b4d8] transition cursor-pointer">
               LIVE DEMO
             </button>
-            <button onClick={() => scrollToSection('faqs')} className="hover:text-emerald-400 transition cursor-pointer">
-              FAQ
+            <button onClick={() => scrollToSection('faqs')} className="hover:text-[#00b4d8] transition cursor-pointer">
+              FAQS
             </button>
-            <button onClick={() => scrollToSection('contact')} className="hover:text-emerald-400 transition cursor-pointer">
+            <button onClick={() => scrollToSection('contact')} className="hover:text-[#00b4d8] transition cursor-pointer">
               CONTACT
             </button>
           </nav>
 
-          {/* Right Action Button */}
+          {/* Right Action Button (TCS CodeVita Cyan Login Button Style) */}
           <div className="flex items-center gap-3">
             {user ? (
               <Link
                 to="/dashboard"
-                className="bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black font-black px-6 py-2.5 rounded-full text-xs tracking-wider uppercase shadow-lg shadow-emerald-500/30 transition-all hover:scale-105 flex items-center gap-2"
+                className="bg-[#00b4d8] hover:bg-[#0096c7] text-white font-extrabold px-6 py-2.5 rounded-lg text-xs tracking-wider uppercase shadow-lg shadow-cyan-500/30 transition-all hover:scale-105 flex items-center gap-2"
               >
                 <span>Control Center</span>
                 <ArrowRight className="w-4 h-4" />
@@ -177,9 +182,9 @@ export const LandingPage: React.FC = () => {
             ) : (
               <Link
                 to="/login"
-                className="bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black font-black px-7 py-2.5 rounded-full text-xs tracking-wider uppercase shadow-lg shadow-emerald-500/30 transition-all hover:scale-105 flex items-center gap-2"
+                className="bg-[#00b4d8] hover:bg-[#0096c7] text-white font-black px-7 py-2.5 rounded-lg text-xs tracking-wider uppercase shadow-lg shadow-cyan-500/30 transition-all hover:scale-105 flex items-center gap-2"
               >
-                <span>Sign In</span>
+                <span>Login</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             )}
@@ -188,243 +193,274 @@ export const LandingPage: React.FC = () => {
       </header>
 
       {/* ============================================================ */}
-      {/* 2. HERO SECTION (Code Beyond Imagination -> Lifesaving Alloc)*/}
+      {/* 2. HERO SECTION (Dark Tech Aesthetic + CodeVita Style Hero)  */}
       {/* ============================================================ */}
-      <section id="hero" className="relative pt-20 pb-36 overflow-hidden bg-gradient-to-b from-black via-zinc-950 to-[#030712] text-center">
-        {/* Radiant Ambient Glows */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-tr from-emerald-500/20 via-teal-500/10 to-transparent rounded-full blur-[160px] pointer-events-none" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#10b98108_1px,transparent_1px),linear-gradient(to_bottom,#10b98108_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
+      <section id="hero" className="relative pt-16 pb-28 sm:pb-36 overflow-hidden bg-gradient-to-b from-[#000000] via-[#050b14] to-[#0a1626] text-center">
+        {/* Radiant Ambient Glows & Grid */}
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[550px] bg-gradient-to-tr from-[#00b4d8]/25 via-emerald-500/15 to-transparent rounded-full blur-[170px] pointer-events-none" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#00b4d80a_1px,transparent_1px),linear-gradient(to_bottom,#00b4d80a_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
 
         <div className="max-w-5xl mx-auto px-4 sm:px-6 relative z-10 space-y-6">
           
-          {/* Season / Version Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-bold tracking-widest uppercase shadow-md shadow-emerald-950">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-            <span>Multi-Hospital Emergency Blood Coordination Platform</span>
+          {/* System Title Badge */}
+          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-cyan-950/70 border border-cyan-500/40 text-cyan-300 text-xs font-mono font-bold tracking-widest uppercase shadow-md shadow-cyan-950">
+            <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse" />
+            <span>Multi-Hospital Blood Resources Sharing and Expiry Management System</span>
           </div>
 
-          {/* Catchy Main Headline */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
-            Lifesaving Coordination <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-green-300">
-              Without Delay
-            </span>
+          {/* Catchy Main Headline (Matching 'Code Beyond Imagination') */}
+          <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-tight">
+            Life Beyond Boundaries
           </h1>
 
           {/* Subtitle */}
           <p className="max-w-3xl mx-auto text-sm sm:text-base text-zinc-300 leading-relaxed font-normal">
-            A unified digital logistics network connecting regional hospitals in real time. Automating instant blood availability matching, priority emergency dispatch, and shelf-life tracking to protect critical patients when every second matters.
+            Autonomous regional blood resource coordination powered by intelligent inventory synchronization, emergency trauma priority scheduling, and shelf-life expiration prevention.
           </p>
 
-          {/* Center Call-to-Action Pill Buttons */}
+          {/* Center Call-to-Action Pill Buttons (CodeVita 'Register Now!' pill style) */}
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               to={user ? "/dashboard" : "/login"}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-full border-2 border-emerald-400/90 text-emerald-300 hover:text-black hover:bg-emerald-400 text-sm font-black tracking-wider uppercase transition-all duration-300 shadow-xl shadow-emerald-500/20 hover:scale-105 flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-full border-2 border-[#00b4d8] text-white hover:text-black hover:bg-[#00b4d8] text-sm font-black tracking-wider uppercase transition-all duration-300 shadow-[0_0_25px_rgba(0,180,216,0.35)] hover:scale-105 flex items-center justify-center gap-2"
             >
-              <span>Access Control Center</span>
+              <span>Register Now!</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
 
             <button
               onClick={handleQuickDemoLogin}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700 text-white text-sm font-bold tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-md"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-white text-sm font-bold tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-105"
             >
-              <Cpu className="w-4 h-4 text-emerald-400" />
+              <Cpu className="w-4 h-4 text-[#00b4d8]" />
               <span>Explore 1-Click Demo</span>
             </button>
           </div>
 
           {/* Safety / Compliance Banner */}
-          <div className="pt-6">
+          <div className="pt-4">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-black/60 border border-zinc-800 text-[11px] text-zinc-400 font-mono">
-              <ShieldAlert className="w-3.5 h-3.5 text-emerald-400" />
+              <ShieldAlert className="w-3.5 h-3.5 text-[#00b4d8]" />
               <span>Verified Hospital Network • Certified Emergency Medical Resource Coordination</span>
             </div>
           </div>
         </div>
 
-        {/* Ambient Curved Wave Separator */}
-        <div className="absolute bottom-0 left-0 right-0 w-full overflow-hidden leading-none pointer-events-none">
-          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-16 text-[#090d16] fill-current">
-            <path d="M0,0 C300,90 900,90 1200,0 L1200,120 L0,120 Z"></path>
+        {/* TCS CodeVita Iconic Curved Wave Divider (Swoops across into crisp white) */}
+        <div className="absolute bottom-0 left-0 right-0 w-full overflow-hidden leading-none pointer-events-none -mb-1">
+          <svg viewBox="0 0 1440 120" preserveAspectRatio="none" className="relative block w-full h-20 sm:h-28 text-slate-50 fill-current">
+            <path d="M0,0 C380,105 1060,105 1440,0 L1440,120 L0,120 Z"></path>
           </svg>
         </div>
       </section>
 
       {/* ============================================================ */}
-      {/* 3. THREE FLOATING METRIC CARDS (Professional & Clear)        */}
+      {/* 3. THREE METRIC CARDS (Exact TCS CodeVita 3-Card Layout)     */}
       {/* ============================================================ */}
-      <section className="relative z-20 -mt-20 max-w-6xl mx-auto px-4 sm:px-6">
+      <section className="relative z-20 -mt-10 sm:-mt-14 max-w-6xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          {/* Card 1: Rapid Response */}
-          <div className="bg-[#090d16] p-7 rounded-2xl border border-zinc-800/90 shadow-2xl hover:border-emerald-500/50 transition-all group">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Clock className="w-6 h-6 text-emerald-400" />
+          {/* Card 1: Hourglass Icon (Matching ⏳ 3) */}
+          <div className="bg-white p-7 rounded-xl border border-slate-200/90 shadow-xl shadow-slate-200/60 flex items-start gap-5 hover:border-[#00b4d8] hover:shadow-2xl transition-all group">
+            <div className="w-12 h-12 rounded-xl bg-cyan-50 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              <Hourglass className="w-7 h-7 text-[#00b4d8]" />
             </div>
-            <div className="text-4xl font-black text-white tracking-tight font-mono mb-1">
-              &lt; 1.2s
+            <div>
+              <div className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight font-sans leading-none mb-1">
+                3
+              </div>
+              <div className="text-xs sm:text-sm font-bold text-slate-700 tracking-tight">
+                Minutes Emergency Trauma SLA
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                Sub-second highway routing and instant cross-hospital donor match.
+              </p>
             </div>
-            <div className="text-xs font-bold text-emerald-400 uppercase tracking-wider font-mono mb-2">
-              Instant Emergency Routing
-            </div>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Instantly identifies the closest hospital with matching blood reserves and calculates optimal transit in under 1.2 seconds.
-            </p>
           </div>
 
-          {/* Card 2: 100% Stock Accuracy */}
-          <div className="bg-[#090d16] p-7 rounded-2xl border border-zinc-800/90 shadow-2xl hover:border-teal-500/50 transition-all group">
-            <div className="w-12 h-12 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <ShieldCheck className="w-6 h-6 text-teal-400" />
+          {/* Card 2: Units Monitored (Matching $ 20000) */}
+          <div className="bg-white p-7 rounded-xl border border-slate-200/90 shadow-xl shadow-slate-200/60 flex items-start gap-5 hover:border-[#00b4d8] hover:shadow-2xl transition-all group">
+            <div className="w-12 h-12 rounded-xl bg-cyan-50 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              <HeartPulse className="w-7 h-7 text-[#00b4d8]" />
             </div>
-            <div className="text-4xl font-black text-white tracking-tight font-mono mb-1">
-              100%
+            <div>
+              <div className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight font-sans leading-none mb-1">
+                20000
+              </div>
+              <div className="text-xs sm:text-sm font-bold text-slate-700 tracking-tight">
+                Blood Units Monitored
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                Zero expiry waste enforced via First-Expiry First-Out (FEFO) tracking.
+              </p>
             </div>
-            <div className="text-xs font-bold text-teal-400 uppercase tracking-wider font-mono mb-2">
-              Real-Time Stock Accuracy
-            </div>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Centralized live inventory ledger eliminates stock conflicts, double-reservations, and dispatch errors across all connected medical centers.
-            </p>
           </div>
 
-          {/* Card 3: Zero Request Delays */}
-          <div className="bg-[#090d16] p-7 rounded-2xl border border-zinc-800/90 shadow-2xl hover:border-green-500/50 transition-all group">
-            <div className="w-12 h-12 rounded-2xl bg-green-500/10 border border-green-500/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Layers className="w-6 h-6 text-green-400" />
+          {/* Card 3: Global Ranking / Unified Network (Matching 📊 1) */}
+          <div className="bg-white p-7 rounded-xl border border-slate-200/90 shadow-xl shadow-slate-200/60 flex items-start gap-5 hover:border-[#00b4d8] hover:shadow-2xl transition-all group">
+            <div className="w-12 h-12 rounded-xl bg-cyan-50 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              <BarChart3 className="w-7 h-7 text-[#00b4d8]" />
             </div>
-            <div className="text-4xl font-black text-white tracking-tight font-mono mb-1">
-              Zero
+            <div>
+              <div className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight font-sans leading-none mb-1">
+                1
+              </div>
+              <div className="text-xs sm:text-sm font-bold text-slate-700 tracking-tight">
+                Unified Healthcare Grid
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                Deterministic concurrency ledger guarantees zero stock double-booking.
+              </p>
             </div>
-            <div className="text-xs font-bold text-green-400 uppercase tracking-wider font-mono mb-2">
-              Zero Request Delays
-            </div>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Intelligent triage priority dispatch ensures critical surgical traumas are fulfilled immediately while routine patient requests are never left behind.
-            </p>
           </div>
 
         </div>
       </section>
 
       {/* ============================================================ */}
-      {/* 4. OVERVIEW & CORE CAPABILITIES (Clear, Professional Headers) */}
+      {/* 4. THE 4 CORE ENGINES SHOWCASE (Clickable Interactive Working) */}
       {/* ============================================================ */}
-      <section id="overview" className="py-24 max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
-          <div className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-widest">
-            PLATFORM CAPABILITIES
+      <section id="engines" className="py-24 max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="text-center max-w-3xl mx-auto space-y-3 mb-16">
+          <div className="text-xs font-mono font-bold text-[#00b4d8] uppercase tracking-widest">
+            CORE PLATFORM ARCHITECTURE
           </div>
-          <h2 className="text-3xl font-black text-white tracking-tight">
-            Designed for High-Reliability Healthcare Logistics
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            The 4 Operational Engines
           </h2>
-          <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-            Purpose-built to manage hospital blood reserves, coordinate emergency transfers, and eliminate wastage through intelligent automation.
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            Click on any engine to inspect its live interactive working, mathematical formulas, and algorithmic step-by-step trace.
           </p>
         </div>
 
-        {/* 4 Core Features Grid */}
-        <div id="capabilities" className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* 4 Engines Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
-          {/* Feature 1: Inventory Sync */}
-          <div className="bg-[#090d16] p-6 rounded-2xl border border-zinc-800 hover:border-emerald-500/40 transition">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                  <ShieldCheck className="w-5 h-5" />
+          {/* Engine 1: Inventory Sync Engine */}
+          <div
+            onClick={() => setSelectedEngineModal('inventory-sync')}
+            className="bg-white p-7 rounded-2xl border border-slate-200 shadow-lg hover:border-[#00b4d8] hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <ShieldCheck className="w-6 h-6" />
                 </div>
-                <div>
-                  <h3 className="text-sm font-extrabold text-white">Live Multi-Hospital Inventory Sync</h3>
-                  <div className="text-[10px] text-zinc-500 font-mono">Centralized Stock Ledger</div>
+                <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  100% ACID CONSISTENCY
+                </span>
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-900 group-hover:text-[#00b4d8] transition-colors">
+                  1. Inventory Sync Engine
+                </h3>
+                <div className="text-xs text-slate-500 font-medium mt-0.5">
+                  Single-Writer Concurrency Mutex & Row Locks
                 </div>
               </div>
-              <span className="text-[9px] font-mono bg-emerald-950 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded uppercase font-bold">
-                ZERO CONFLICTS
-              </span>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Deterministic row-level locking eliminates phantom stock, race conditions, and double-allocation across regional hospital facilities. Enforces total ordering with ascending hospital ID acquisition.
+              </p>
             </div>
-            <p className="text-xs text-zinc-400 leading-relaxed mb-4">
-              Keeps blood counts perfectly synchronized across all participating hospitals. Automatically accounts for on-shelf, reserved, and in-transit units to prevent sudden local shortages.
-            </p>
-            <div className="text-[11px] text-zinc-400 flex items-center justify-between border-t border-zinc-800/60 pt-3 font-mono">
-              <span>Reliability: 100% Real-Time</span>
-              <span className="text-emerald-400">Automated Conflict Resolution</span>
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-mono font-bold text-[#00b4d8] group-hover:translate-x-1 transition-transform">
+              <span>View Interactive Mutex Working</span>
+              <ArrowRight className="w-4 h-4" />
             </div>
           </div>
 
-          {/* Feature 2: Smart Routing */}
-          <div className="bg-[#090d16] p-6 rounded-2xl border border-zinc-800 hover:border-teal-500/40 transition">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400">
-                  <Network className="w-5 h-5" />
+          {/* Engine 2: Priority Scheduling Engine */}
+          <div
+            onClick={() => setSelectedEngineModal('priority-scheduling')}
+            className="bg-white p-7 rounded-2xl border border-slate-200 shadow-lg hover:border-[#00b4d8] hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-xl bg-cyan-50 text-[#00b4d8] border border-cyan-200 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Layers className="w-6 h-6" />
                 </div>
-                <div>
-                  <h3 className="text-sm font-extrabold text-white">Smart Proximity & Transit Routing</h3>
-                  <div className="text-[10px] text-zinc-500 font-mono">Intelligent Hospital Matching</div>
+                <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-300">
+                  MLFQ & BANKER'S SAFETY
+                </span>
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-900 group-hover:text-[#00b4d8] transition-colors">
+                  2. Priority Scheduling Engine
+                </h3>
+                <div className="text-xs text-slate-500 font-medium mt-0.5">
+                  3-Lane Triage Queuing & Starvation Prevention
                 </div>
               </div>
-              <span className="text-[9px] font-mono bg-teal-950 text-teal-300 border border-teal-800/60 px-2 py-0.5 rounded uppercase font-bold">
-                FASTEST TRANSIT
-              </span>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                3-lane feedback queues preempt non-urgent holds during trauma crises with a +15 compensation boost to guarantee zero patient starvation while Banker's safety state matrix validates multi-center reserve buffers.
+              </p>
             </div>
-            <p className="text-xs text-zinc-400 leading-relaxed mb-4">
-              Analyzes regional hospital road networks and live driving distances to dispatch blood from the closest facility, optimizing travel times and vehicle routes.
-            </p>
-            <div className="text-[11px] text-zinc-400 flex items-center justify-between border-t border-zinc-800/60 pt-3 font-mono">
-              <span>Transit Safety: 4-Hour Buffer</span>
-              <span className="text-teal-400">Real-World Road Maps Integrated</span>
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-mono font-bold text-[#00b4d8] group-hover:translate-x-1 transition-transform">
+              <span>View Interactive MLFQ Working</span>
+              <ArrowRight className="w-4 h-4" />
             </div>
           </div>
 
-          {/* Feature 3: Freshness & Shelf-Life */}
-          <div className="bg-[#090d16] p-6 rounded-2xl border border-zinc-800 hover:border-green-500/40 transition">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-green-500/10 border border-green-500/30 flex items-center justify-center text-green-400">
-                  <Clock className="w-5 h-5" />
+          {/* Engine 3: Web Engine */}
+          <div
+            onClick={() => setSelectedEngineModal('web-engine')}
+            className="bg-white p-7 rounded-2xl border border-slate-200 shadow-lg hover:border-[#00b4d8] hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Globe className="w-6 h-6" />
                 </div>
-                <div>
-                  <h3 className="text-sm font-extrabold text-white">Freshness & Shelf-Life Management</h3>
-                  <div className="text-[10px] text-zinc-500 font-mono">Zero-Waste First-Expiry Protocol</div>
+                <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 border border-blue-300">
+                  SUB-15MS SSE TELEMETRY
+                </span>
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-900 group-hover:text-[#00b4d8] transition-colors">
+                  3. Web Engine
+                </h3>
+                <div className="text-xs text-slate-500 font-medium mt-0.5">
+                  Reactive Multi-Hospital Telemetry Portal
                 </div>
               </div>
-              <span className="text-[9px] font-mono bg-green-950 text-green-300 border border-green-800/60 px-2 py-0.5 rounded uppercase font-bold">
-                ACTIVE MONITORING
-              </span>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Full-stack reactive web platform streaming real-time Server-Sent Events (SSE) for instant emergency notifications, REST API endpoints, and automatic self-healing offline store fallbacks.
+              </p>
             </div>
-            <p className="text-xs text-zinc-400 leading-relaxed mb-4">
-              Tracks expiration timelines down to the minute. Prioritizes units nearing shelf-life for scheduled transfusions, preventing life-saving blood from expiring on hospital shelves.
-            </p>
-            <div className="text-[11px] text-zinc-400 flex items-center justify-between border-t border-zinc-800/60 pt-3 font-mono">
-              <span>Red Blood Cells: 42-Day Cycle</span>
-              <span className="text-green-400">Platelets: 5-Day Freshness</span>
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-mono font-bold text-[#00b4d8] group-hover:translate-x-1 transition-transform">
+              <span>View Interactive Web Stream Working</span>
+              <ArrowRight className="w-4 h-4" />
             </div>
           </div>
 
-          {/* Feature 4: Priority Emergency Dispatch */}
-          <div className="bg-[#090d16] p-6 rounded-2xl border border-zinc-800 hover:border-emerald-500/40 transition">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                  <Layers className="w-5 h-5" />
+          {/* Engine 4: Match and Expiry Engine */}
+          <div
+            onClick={() => setSelectedEngineModal('match-expiry')}
+            className="bg-white p-7 rounded-2xl border border-slate-200 shadow-lg hover:border-[#00b4d8] hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 border border-teal-200 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Network className="w-6 h-6" />
                 </div>
-                <div>
-                  <h3 className="text-sm font-extrabold text-white">Priority Emergency Dispatch System</h3>
-                  <div className="text-[10px] text-zinc-500 font-mono">Fair & Triage-Based Queuing</div>
+                <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-teal-100 text-teal-800 border border-teal-300">
+                  DIJKSTRA + BINARY MIN-HEAP
+                </span>
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-900 group-hover:text-[#00b4d8] transition-colors">
+                  4. Match and Expiry Engine
+                </h3>
+                <div className="text-xs text-slate-500 font-medium mt-0.5">
+                  Shortest Route Pathfinder & FEFO Expiry Tracker
                 </div>
               </div>
-              <span className="text-[9px] font-mono bg-emerald-950 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded uppercase font-bold">
-                TRIAGE ASSURED
-              </span>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Dijkstra pathfinder evaluates regional road network weights to find the fastest highway route, while Binary Min-Heap tracks expiration down to the hour to prioritize units for scheduled clinical transfusions.
+              </p>
             </div>
-            <p className="text-xs text-zinc-400 leading-relaxed mb-4">
-              Multi-level emergency triage ensures critical surgical emergencies receive immediate stock while routine clinical requests maintain fair, guaranteed delivery schedules.
-            </p>
-            <div className="text-[11px] text-zinc-400 flex items-center justify-between border-t border-zinc-800/60 pt-3 font-mono">
-              <span>Emergency Preemption: Instant</span>
-              <span className="text-emerald-400">Fair Waitlist Protection Active</span>
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-mono font-bold text-[#00b4d8] group-hover:translate-x-1 transition-transform">
+              <span>View Interactive Route & Heap Working</span>
+              <ArrowRight className="w-4 h-4" />
             </div>
           </div>
 
@@ -432,228 +468,281 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* ============================================================ */}
-      {/* 5. HOSPITAL NETWORK (5 CONNECTED MEDICAL CENTERS)            */}
+      {/* 5. ABOUT PLATFORM OVERVIEW (Clear, Professional Headers)     */}
       {/* ============================================================ */}
-      <section id="hospitals" className="py-20 bg-black/60 border-y border-zinc-800/80">
+      <section id="overview" className="py-20 bg-slate-100/70 border-y border-slate-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-12">
           
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-widest">
-                REGIONAL HEALTHCARE ALLIANCE
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1">
-                Connected Regional Medical Centers
-              </h2>
-              <p className="text-xs text-zinc-400">
-                A unified network of accredited hospitals collaborating to share emergency blood reserves.
-              </p>
+          <div className="text-center max-w-3xl mx-auto space-y-3">
+            <div className="text-xs font-mono font-bold text-[#00b4d8] uppercase tracking-widest">
+              SYSTEM OVERVIEW
             </div>
-
-            <Link
-              to="/hospitals"
-              className="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-bold hover:underline font-mono"
-            >
-              <span>View All Facilities in Dashboard</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            {[
-              { id: 'H001', name: 'KLE Hospital', city: 'Belagavi', contact: '+91 831 247 3777', stock: '30 units', role: 'Level 1 Trauma Center' },
-              { id: 'H002', name: 'District Hospital', city: 'Belagavi', contact: '+91 831 240 4000', stock: '10 units', role: 'District Blood Bank' },
-              { id: 'H003', name: 'City Care Hospital', city: 'Hubballi', contact: '+91 836 225 8888', stock: '22 units', role: 'Specialty Surgical Center' },
-              { id: 'H004', name: 'Sahyadri Medical Center', city: 'Dharwad', contact: '+91 836 244 5555', stock: '6 units', role: 'Emergency Care Unit' },
-              { id: 'H005', name: 'Shree Hospital', city: 'Bengaluru', contact: '+91 80 2332 1111', stock: '5 units', role: 'Regional Tertiary Center' },
-            ].map((hosp) => (
-              <div key={hosp.id} className="bg-[#090d16] p-4 rounded-xl border border-zinc-800/80 hover:border-emerald-500/40 transition space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800/40">
-                    {hosp.id}
-                  </span>
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-black text-white">{hosp.name}</h4>
-                  <div className="text-[11px] text-zinc-400 font-medium">{hosp.city}</div>
-                </div>
-                <div className="text-[10px] text-zinc-500 leading-tight">
-                  {hosp.role}
-                </div>
-                <div className="pt-2 border-t border-zinc-800/60 flex items-center justify-between text-[10px] font-mono">
-                  <span className="text-zinc-400">Stock:</span>
-                  <span className="text-emerald-400 font-bold">{hosp.stock}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-        </div>
-      </section>
-
-      {/* ============================================================ */}
-      {/* 6. INTERACTIVE OPERATIONAL SIMULATIONS (Clear & Friendly)    */}
-      {/* ============================================================ */}
-      <section id="simulations" className="py-24 max-w-6xl mx-auto px-4 sm:px-6 space-y-12">
-        <div className="text-center max-w-3xl mx-auto space-y-4">
-          <div className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-widest">
-            INTERACTIVE PLATFORM DEMO
-          </div>
-          <h2 className="text-3xl font-black text-white tracking-tight">
-            Simulate Real-World Emergency Scenarios
-          </h2>
-          <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-            Test how the platform handles high-priority emergencies, fair queue distribution, multi-center stock transfers, and expiration alerts in real time.
-          </p>
-        </div>
-
-        {/* Interactive Scenario Control Console */}
-        <div className="bg-[#090d16] rounded-3xl border border-zinc-800 overflow-hidden shadow-2xl">
-          {/* Top Scenario Selector Tabs */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border-b border-zinc-800 bg-black/60">
-            {demosList.map((demo) => (
-              <button
-                key={demo.id}
-                onClick={() => setSelectedDemo(demo.id)}
-                className={`p-3.5 text-left transition-all border-r border-zinc-800 last:border-r-0 cursor-pointer ${
-                  selectedDemo === demo.id
-                    ? 'bg-emerald-950/40 text-emerald-300 border-b-2 border-b-emerald-400'
-                    : 'text-zinc-400 hover:bg-zinc-900/60 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center justify-between gap-1 mb-1">
-                  <span className="font-mono text-xs font-black">{demo.id}</span>
-                  <span className="text-[8px] font-mono px-1 py-0.2 rounded bg-zinc-800 text-zinc-300">
-                    {demo.badge}
-                  </span>
-                </div>
-                <div className="text-[11px] font-bold text-white truncate">{demo.title}</div>
-              </button>
-            ))}
-          </div>
-
-          {/* Console Body */}
-          <div className="p-6 sm:p-8 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-                  <span className="text-emerald-400 font-mono">[{selectedDemo}]</span>
-                  <span>{demosList.find(d => d.id === selectedDemo)?.title}</span>
-                </h3>
-                <p className="text-xs text-zinc-400 mt-0.5">
-                  Workflow Type: <span className="text-emerald-400 font-mono">{demosList.find(d => d.id === selectedDemo)?.category}</span>
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => handleRunDemo(selectedDemo)}
-                  disabled={demoRunning}
-                  className="bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black font-black px-5 py-2.5 rounded-xl text-xs tracking-wider uppercase flex items-center gap-2 shadow-lg shadow-emerald-500/25 transition disabled:opacity-50 cursor-pointer"
-                >
-                  {demoRunning ? (
-                    <>
-                      <RotateCcw className="w-4 h-4 animate-spin text-black" />
-                      <span>Simulating Workflow...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-4 h-4 text-black fill-black" />
-                      <span>Run Live Simulation</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Terminal Output Screen */}
-            <div className="p-4 rounded-xl bg-black border border-zinc-800 font-mono text-xs text-zinc-300 space-y-2">
-              <div className="flex items-center justify-between text-[10px] text-zinc-500 border-b border-zinc-800 pb-2">
-                <span>SIMULATED WORKFLOW EXECUTION LOG</span>
-                <span className="text-emerald-400 font-bold">STATUS: READY</span>
-              </div>
-              <p className="text-emerald-300 pt-1 leading-relaxed">
-                &gt; {demoLogs[selectedDemo]}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ============================================================ */}
-      {/* 7. FREQUENTLY ASKED QUESTIONS (FAQS)                         */}
-      {/* ============================================================ */}
-      <section id="faqs" className="py-20 bg-black/50 border-t border-zinc-800/80">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-10">
-          
-          <div className="text-center space-y-3">
-            <div className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-widest">
-              HELP & COMMON INQUIRIES
-            </div>
-            <h2 className="text-3xl font-black text-white tracking-tight">
-              Frequently Asked Questions
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+              Designed for High-Reliability Healthcare Logistics
             </h2>
-            <p className="text-xs text-zinc-400">
-              Everything you need to know about how the BloodResource Sync network coordinates hospital supplies.
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Eliminating regional blood shortages and shelf-life expiration through deterministic algorithms and automated cross-facility coordination.
             </p>
           </div>
 
-          <div className="space-y-3">
-            {faqs.map((faq, index) => {
-              const isOpen = openFaq === index;
-              return (
-                <div
-                  key={index}
-                  className="bg-[#090d16] rounded-2xl border border-zinc-800 overflow-hidden transition"
-                >
-                  <button
-                    onClick={() => setOpenFaq(isOpen ? null : index)}
-                    className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 cursor-pointer hover:bg-zinc-900/50 transition"
-                  >
-                    <span className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2.5">
-                      <HelpCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>{faq.q}</span>
-                    </span>
-                    {isOpen ? (
-                      <ChevronUp className="w-4 h-4 text-emerald-400 shrink-0" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-zinc-500 shrink-0" />
-                    )}
-                  </button>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-cyan-50 flex items-center justify-center text-[#00b4d8]">
+                <Clock className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-extrabold text-slate-900">Zero Wait Emergency Dispatch</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Emergency trauma surgeries are instantly prioritized across the entire regional grid, eliminating telephone delays and manual searching during Code-Red events.
+              </p>
+            </div>
 
-                  {isOpen && (
-                    <div className="px-5 pb-5 text-xs text-zinc-400 leading-relaxed border-t border-zinc-800/60 pt-3">
-                      {faq.a}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-extrabold text-slate-900">100% Stock Synchronization</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Centralized reservation locks prevent race conditions and inventory conflicts. When a unit is assigned, every partner center sees updated availability instantly.
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center text-teal-600">
+                <HeartPulse className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-extrabold text-slate-900">Zero-Waste Expiry Management</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Units approaching end of shelf-life are automatically elevated for scheduled transfusions, dramatically cutting hospital blood waste and preserving critical donor supply.
+              </p>
+            </div>
           </div>
 
         </div>
       </section>
 
       {/* ============================================================ */}
-      {/* 8. FOOTER & CONTACT (Clean Institutional Footer)             */}
+      {/* 6. CONNECTED HOSPITAL NETWORK (5 REGIONAL FACILITIES)       */}
       {/* ============================================================ */}
-      <footer id="contact" className="bg-black text-zinc-400 border-t border-zinc-800/80 py-16">
+      <section id="hospitals" className="py-20 max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
+        
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="text-xs font-mono font-bold text-[#00b4d8] uppercase tracking-widest">
+              REGIONAL HEALTHCARE ALLIANCE
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
+              Connected Regional Medical Centers
+            </h2>
+            <p className="text-xs text-slate-500">
+              A unified network of accredited hospitals collaborating to share emergency blood reserves.
+            </p>
+          </div>
+
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-1.5 text-xs text-[#00b4d8] font-bold hover:underline font-mono"
+          >
+            <span>Access Network Control Center</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {[
+            { id: 'H001', name: 'KLE Hospital', city: 'Belagavi', contact: '+91 831 247 3777', stock: '30 units', role: 'Level 1 Trauma Center' },
+            { id: 'H002', name: 'District Hospital', city: 'Belagavi', contact: '+91 831 240 4000', stock: '10 units', role: 'District Blood Bank' },
+            { id: 'H003', name: 'City Care Hospital', city: 'Hubballi', contact: '+91 836 225 8888', stock: '22 units', role: 'Specialty Surgical Center' },
+            { id: 'H004', name: 'Sahyadri Medical Center', city: 'Dharwad', contact: '+91 836 244 5555', stock: '6 units', role: 'Emergency Care Unit' },
+            { id: 'H005', name: 'Shree Hospital', city: 'Bengaluru', contact: '+91 80 2332 1111', stock: '5 units', role: 'Regional Tertiary Center' },
+          ].map((hosp) => (
+            <div key={hosp.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-[#00b4d8] transition space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono font-bold text-cyan-800 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
+                  {hosp.id}
+                </span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              </div>
+              <div>
+                <h4 className="text-xs font-black text-slate-900">{hosp.name}</h4>
+                <div className="text-[11px] text-slate-500 font-medium">{hosp.city}</div>
+              </div>
+              <div className="text-[10px] text-slate-500 leading-tight">
+                {hosp.role}
+              </div>
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-mono">
+                <span className="text-slate-500">Stock:</span>
+                <span className="text-[#00b4d8] font-bold">{hosp.stock}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+      </section>
+
+      {/* ============================================================ */}
+      {/* 7. INTERACTIVE OPERATIONAL SIMULATIONS (6 Working Scenarios) */}
+      {/* ============================================================ */}
+      <section id="simulations" className="py-20 bg-slate-900 text-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
+          
+          <div className="text-center max-w-3xl mx-auto space-y-3">
+            <div className="text-xs font-mono font-bold text-[#00b4d8] uppercase tracking-widest">
+              INTERACTIVE PLATFORM DEMO
+            </div>
+            <h2 className="text-3xl font-black text-white tracking-tight">
+              Simulate Real-World Emergency Scenarios
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+              Test how the platform handles high-priority emergencies, fair queue distribution, multi-center stock transfers, and expiration alerts in real time.
+            </p>
+          </div>
+
+          {/* Interactive Scenario Control Console */}
+          <div className="bg-[#050b14] rounded-2xl border border-zinc-800 overflow-hidden shadow-2xl">
+            {/* Top Scenario Selector Tabs */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border-b border-zinc-800 bg-black/60">
+              {demosList.map((demo) => (
+                <button
+                  key={demo.id}
+                  onClick={() => setSelectedDemo(demo.id)}
+                  className={`p-3.5 text-left transition-all border-r border-zinc-800 last:border-r-0 cursor-pointer ${
+                    selectedDemo === demo.id
+                      ? 'bg-cyan-950/50 text-cyan-300 border-b-2 border-b-[#00b4d8]'
+                      : 'text-zinc-400 hover:bg-zinc-900/60 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <span className="font-mono text-xs font-black">{demo.id}</span>
+                    <span className="text-[8px] font-mono px-1 py-0.2 rounded bg-zinc-800 text-zinc-300">
+                      {demo.badge}
+                    </span>
+                  </div>
+                  <div className="text-[11px] font-bold text-white truncate">{demo.title}</div>
+                </button>
+              ))}
+            </div>
+
+            {/* Console Body */}
+            <div className="p-6 sm:p-8 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                    <span className="text-[#00b4d8] font-mono">[{selectedDemo}]</span>
+                    <span>{demosList.find(d => d.id === selectedDemo)?.title}</span>
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Workflow Type: <span className="text-[#00b4d8] font-mono">{demosList.find(d => d.id === selectedDemo)?.category}</span>
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleRunDemo(selectedDemo)}
+                    disabled={demoRunning}
+                    className="bg-[#00b4d8] hover:bg-[#0096c7] text-white font-black px-6 py-2.5 rounded-xl text-xs tracking-wider uppercase flex items-center gap-2 shadow-lg shadow-cyan-500/25 transition disabled:opacity-50 cursor-pointer hover:scale-105"
+                  >
+                    {demoRunning ? (
+                      <>
+                        <RotateCcw className="w-4 h-4 animate-spin text-white" />
+                        <span>Simulating Workflow...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4 text-white fill-white" />
+                        <span>Run Live Simulation</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Terminal Output Screen */}
+              <div className="p-4 rounded-xl bg-black border border-zinc-800 font-mono text-xs text-zinc-300 space-y-2">
+                <div className="flex items-center justify-between text-[10px] text-zinc-500 border-b border-zinc-800 pb-2">
+                  <span>SIMULATED WORKFLOW EXECUTION LOG</span>
+                  <span className="text-emerald-400 font-bold">STATUS: READY</span>
+                </div>
+                <p className="text-cyan-300 pt-1 leading-relaxed">
+                  &gt; {demoLogs[selectedDemo]}
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ============================================================ */}
+      {/* 8. FREQUENTLY ASKED QUESTIONS (FAQS)                         */}
+      {/* ============================================================ */}
+      <section id="faqs" className="py-20 max-w-4xl mx-auto px-4 sm:px-6 space-y-10">
+        
+        <div className="text-center space-y-3">
+          <div className="text-xs font-mono font-bold text-[#00b4d8] uppercase tracking-widest">
+            HELP & COMMON INQUIRIES
+          </div>
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+            Frequently Asked Questions
+          </h2>
+          <p className="text-xs text-slate-500">
+            Everything you need to know about how the VitalSync platform coordinates hospital supplies.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          {faqs.map((faq, index) => {
+            const isOpen = openFaq === index;
+            return (
+              <div
+                key={index}
+                className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm transition"
+              >
+                <button
+                  onClick={() => setOpenFaq(isOpen ? null : index)}
+                  className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 cursor-pointer hover:bg-slate-50 transition"
+                >
+                  <span className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-2.5">
+                    <HelpCircle className="w-4 h-4 text-[#00b4d8] shrink-0" />
+                    <span>{faq.q}</span>
+                  </span>
+                  {isOpen ? (
+                    <ChevronUp className="w-4 h-4 text-[#00b4d8] shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+                  )}
+                </button>
+
+                {isOpen && (
+                  <div className="px-5 pb-5 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-3">
+                    {faq.a}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+      </section>
+
+      {/* ============================================================ */}
+      {/* 9. FOOTER & CONTACT (Clean Institutional Footer)             */}
+      {/* ============================================================ */}
+      <footer id="contact" className="bg-[#000000] text-zinc-400 border-t border-zinc-800 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {/* Col 1: Brand */}
             <div className="space-y-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center font-black text-black">
-                  <Droplets className="w-5 h-5" />
+                <div className="w-8 h-8 rounded-lg bg-[#00b4d8] flex items-center justify-center font-black text-black">
+                  <Droplets className="w-5 h-5 text-black" />
                 </div>
-                <span className="font-black text-white text-base tracking-tight">BloodResource Sync™</span>
+                <span className="font-black text-white text-base tracking-tight">VitalSync™</span>
               </div>
               <p className="text-xs text-zinc-500 leading-relaxed">
                 The intelligent multi-hospital blood coordination and emergency logistics platform. Connecting medical facilities to deliver lifesaving resources when every second counts.
               </p>
-              <div className="text-[10px] font-mono text-emerald-400">
+              <div className="text-[10px] font-mono text-[#00b4d8]">
                 STATUS: LIVE REGIONAL GRID ACTIVE
               </div>
             </div>
@@ -664,36 +753,36 @@ export const LandingPage: React.FC = () => {
                 Platform Navigation
               </div>
               <ul className="space-y-1.5 text-zinc-400">
-                <li><Link to="/dashboard" className="hover:text-emerald-400 transition">Executive Dashboard</Link></li>
-                <li><Link to="/inventory" className="hover:text-emerald-400 transition">Live Inventory Tracking</Link></li>
-                <li><Link to="/requests" className="hover:text-emerald-400 transition">Emergency Requests</Link></li>
-                <li><Link to="/transfers" className="hover:text-emerald-400 transition">Transit & Delivery</Link></li>
+                <li><Link to="/login" className="hover:text-[#00b4d8] transition">Control Center Login</Link></li>
+                <li><Link to="/login" className="hover:text-[#00b4d8] transition">Register Facility</Link></li>
+                <li><button onClick={() => scrollToSection('engines')} className="hover:text-[#00b4d8] transition text-left cursor-pointer">4 Core Engines</button></li>
+                <li><button onClick={() => scrollToSection('simulations')} className="hover:text-[#00b4d8] transition text-left cursor-pointer">Live Simulations</button></li>
               </ul>
             </div>
 
-            {/* Col 3: Key Capabilities */}
+            {/* Col 3: The 4 Core Engines */}
             <div className="space-y-2.5 text-xs">
               <div className="font-bold text-white font-mono uppercase text-[11px] tracking-wider">
-                Key Capabilities
+                The 4 System Engines
               </div>
               <ul className="space-y-1.5 text-zinc-400 text-[11px]">
-                <li>• Real-Time Inventory Sync</li>
-                <li>• Smart Hospital Routing</li>
-                <li>• Automated Shelf-Life Alerts</li>
-                <li>• Priority Triage Dispatch</li>
+                <li><button onClick={() => setSelectedEngineModal('inventory-sync')} className="hover:text-[#00b4d8] transition text-left cursor-pointer">• 1. Inventory Sync Engine</button></li>
+                <li><button onClick={() => setSelectedEngineModal('priority-scheduling')} className="hover:text-[#00b4d8] transition text-left cursor-pointer">• 2. Priority Scheduling Engine</button></li>
+                <li><button onClick={() => setSelectedEngineModal('web-engine')} className="hover:text-[#00b4d8] transition text-left cursor-pointer">• 3. Web Engine</button></li>
+                <li><button onClick={() => setSelectedEngineModal('match-expiry')} className="hover:text-[#00b4d8] transition text-left cursor-pointer">• 4. Match and Expiry Engine</button></li>
               </ul>
             </div>
 
-            {/* Col 4: Institutional Disclaimer */}
+            {/* Col 4: Operational Safety Disclaimer */}
             <div className="space-y-3 text-xs">
               <div className="font-bold text-white font-mono uppercase text-[11px] tracking-wider">
                 Operational Safety
               </div>
               <p className="text-[11px] text-zinc-500 leading-snug">
-                BloodResource Sync provides operational coordination and inventory visibility across participating healthcare centers. All blood component suitability and transfusion procedures remain under physician clinical supervision.
+                VitalSync provides logistics coordination and inventory visibility across participating healthcare centers. All blood component cross-matching and transfusion procedures remain under physician clinical supervision.
               </p>
               <div className="text-[10px] text-zinc-600 font-mono">
-                © 2026 BloodResource Sync. All rights reserved.
+                © 2026 VitalSync. All rights reserved.
               </div>
             </div>
           </div>
@@ -701,15 +790,15 @@ export const LandingPage: React.FC = () => {
           {/* Bottom Bar */}
           <div className="pt-8 border-t border-zinc-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
             <div>
-              Multi-Hospital Emergency Blood Resource & Logistics Coordination Network.
+              Multi-Hospital Blood Resources Sharing and Expiry Management System.
             </div>
             <div className="flex items-center gap-4">
               <button
                 onClick={scrollToTop}
-                className="hover:text-emerald-400 transition flex items-center gap-1 font-mono text-[11px]"
+                className="hover:text-[#00b4d8] transition flex items-center gap-1 font-mono text-[11px] cursor-pointer"
               >
                 <span>Back to Top</span>
-                <ArrowUp className="w-3.5 h-3.5" />
+                <ChevronUp className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -717,16 +806,25 @@ export const LandingPage: React.FC = () => {
         </div>
       </footer>
 
-      {/* Floating Back-To-Top Arrow Button */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
+      {/* Floating Back-To-Top Arrow Button (Matching TCS CodeVita Bottom Right Cyan Button) */}
+      <div className="fixed bottom-6 right-6 z-50">
         <button
           onClick={scrollToTop}
-          className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black shadow-xl shadow-emerald-500/30 flex items-center justify-center transition-all hover:scale-110 cursor-pointer"
+          className="w-12 h-12 rounded-xl bg-[#00b4d8] hover:bg-[#0096c7] text-white shadow-xl shadow-cyan-500/30 flex items-center justify-center transition-all hover:scale-110 cursor-pointer"
           title="Back to Top"
         >
-          <ArrowUp className="w-5 h-5 text-black font-black stroke-[3]" />
+          <ChevronUp className="w-6 h-6 stroke-[3]" />
         </button>
       </div>
+
+      {/* Engine Workflow Interactive Modal */}
+      {selectedEngineModal && (
+        <EngineWorkflowModal
+          engineId={selectedEngineModal}
+          onClose={() => setSelectedEngineModal(null)}
+          onSelectEngine={(id) => setSelectedEngineModal(id)}
+        />
+      )}
 
     </div>
   );

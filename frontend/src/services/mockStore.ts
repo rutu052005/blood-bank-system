@@ -203,7 +203,7 @@ export class MockDataStore {
   transfers = [...MOCK_TRANSFERS];
   alerts = [...MOCK_ALERTS];
   offsetHours = 0;
-  enginePaused = { 'inventory-sync': false, matching: false, expiry: false, scheduler: false };
+  enginePaused = { 'inventory-sync': false, 'priority-scheduling': false, 'web-engine': false, 'match-expiry': false };
 
   login(credentials: { email: string; password?: string }) {
     const user = this.users.find(u => u.email.toLowerCase() === (credentials.email || '').toLowerCase()) || this.users[0];
@@ -239,10 +239,12 @@ export class MockDataStore {
 
   getEngineStatus() {
     return {
-      inventorySync: { status: this.enginePaused['inventory-sync'] ? 'PAUSED' : 'RUNNING', singleWriterLock: 'FREE' },
-      matching: { status: this.enginePaused['matching'] ? 'PAUSED' : 'RUNNING', algorithm: 'Dijkstra Min-Heap (DSA)' },
-      expiry: { status: this.enginePaused['expiry'] ? 'PAUSED' : 'RUNNING', trackedUnits: this.inventory.length },
-      scheduler: { status: this.enginePaused['scheduler'] ? 'PAUSED' : 'RUNNING', activeQueue: 'MLFQ (OS Priority Levels 0-2)' },
+      engines: [
+        { id: 'inventory-sync', name: 'Inventory Sync Engine', subject: 'DBMS LEDGER', status: this.enginePaused['inventory-sync'] ? 'PAUSED' : 'RUNNING', algorithm: 'Single-Writer Mutex & Row Locks', queueDepth: '0 waiting' },
+        { id: 'priority-scheduling', name: 'Priority Scheduling Engine', subject: 'OS QUEUES', status: this.enginePaused['priority-scheduling'] ? 'PAUSED' : 'RUNNING', algorithm: 'OS MLFQ & Banker Safety', queueDepth: `${this.requests.length} requests` },
+        { id: 'web-engine', name: 'Web Engine', subject: 'FULL-STACK WEB', status: this.enginePaused['web-engine'] ? 'PAUSED' : 'RUNNING', algorithm: 'REST API, SSE Stream & Reactive UI', queueDepth: 'Active HTTP/2' },
+        { id: 'match-expiry', name: 'Match and Expiry Engine', subject: 'DSA GRAPH & HEAP', status: this.enginePaused['match-expiry'] ? 'PAUSED' : 'RUNNING', algorithm: 'Dijkstra Path + Min-Heap FEFO', queueDepth: `${this.inventory.length} units` },
+      ],
       clock: {
         now: new Date(Date.now() + this.offsetHours * 3600000).toISOString(),
         offsetHours: this.offsetHours,
