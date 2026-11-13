@@ -82,6 +82,7 @@ export const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<LoginPage />} />
           <Route path="/*" element={<ProtectedLayout />} />
         </Routes>
       </BrowserRouter>

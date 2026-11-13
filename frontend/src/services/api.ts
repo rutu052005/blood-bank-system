@@ -55,6 +55,10 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
     const body = options.body ? JSON.parse(options.body as string) : {};
     return mockStore.login(body) as unknown as T;
   }
+  if (endpoint === '/auth/register') {
+    const body = options.body ? JSON.parse(options.body as string) : {};
+    return mockStore.register(body) as unknown as T;
+  }
   if (endpoint === '/auth/me') {
     return mockStore.getCurrentUser() as unknown as T;
   }
@@ -290,6 +294,8 @@ export const api = {
   // Auth
   login: (credentials: { email: string; password: string }) =>
     request<{ token: string; user: any }>('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
+  register: (userData: any) =>
+    request<{ token: string; user: any }>('/auth/register', { method: 'POST', body: JSON.stringify(userData) }),
   getMe: () => request<any>('/auth/me'),
 
   // Hospitals & Users

@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (credentials: { email: string; password: string }) => Promise<void>;
+  register: (userData: { name: string; email: string; hospital_id?: string; role?: string; password?: string }) => Promise<void>;
   logout: () => void;
   hasRole: (...roles: string[]) => boolean;
 }
@@ -14,6 +15,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   login: async () => {},
+  register: async () => {},
   logout: () => {},
   hasRole: () => false,
 });
@@ -40,6 +42,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(res.user);
   };
 
+  const register = async (userData: { name: string; email: string; hospital_id?: string; role?: string; password?: string }) => {
+    const res = await api.register(userData);
+    setToken(res.token);
+    setUser(res.user);
+  };
+
   const logout = () => {
     removeToken();
     setUser(null);
@@ -51,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, hasRole }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, hasRole }}>
       {children}
     </AuthContext.Provider>
   );

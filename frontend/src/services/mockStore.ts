@@ -212,6 +212,23 @@ export class MockDataStore {
     return { token, user };
   }
 
+  register(userData: { name: string; email: string; hospital_id?: string; role?: string }) {
+    const hospital = this.hospitals.find(h => h.id === userData.hospital_id) || this.hospitals[0];
+    const newUser: User = {
+      id: `U${String(this.users.length + 1).padStart(3, '0')}`,
+      name: userData.name || 'Medical Officer',
+      email: userData.email,
+      role: (userData.role as any) || 'HOSPITAL_ADMIN',
+      hospital_id: hospital.id,
+      hospital_name: hospital.name,
+      status: 'ACTIVE',
+    };
+    this.users.push(newUser);
+    const token = 'demo-jwt-token-' + newUser.id;
+    localStorage.setItem('demo_user', JSON.stringify(newUser));
+    return { token, user: newUser };
+  }
+
   getCurrentUser() {
     const saved = localStorage.getItem('demo_user');
     if (saved) {

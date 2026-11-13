@@ -20,8 +20,12 @@ import {
 } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const { user, login } = useAuth();
+  const { user, login, register } = useAuth();
   const navigate = useNavigate();
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  const [name, setName] = useState('');
+  const [hospitalId, setHospitalId] = useState('H001');
+  const [role, setRole] = useState('HOSPITAL_ADMIN');
   const [email, setEmail] = useState('admin@demo.local');
   const [password, setPassword] = useState('demo123');
   const [error, setError] = useState('');
@@ -39,10 +43,14 @@ export const LoginPage: React.FC = () => {
     setError('');
     setLoading(true);
     try {
-      await login({ email, password });
+      if (authMode === 'signup') {
+        await register({ name, email, hospital_id: hospitalId, role, password });
+      } else {
+        await login({ email, password });
+      }
       navigate('/dashboard');
     } catch (err: any) {
-      let msg = err.message || 'Login failed';
+      let msg = err.message || (authMode === 'signup' ? 'Registration failed' : 'Login failed');
       if (msg.includes('500') || msg.includes('ECONNREFUSED') || msg.includes('Failed to fetch')) {
         msg = 'Unable to connect to backend server. Operating in offline demo fallback.';
       }
@@ -252,13 +260,41 @@ export const LoginPage: React.FC = () => {
                     Authorized Access Portal
                   </h3>
                   <p className="text-xs text-zinc-400 mt-0.5">
-                    Select a verified role or sign in with institutional credentials
+                    {authMode === 'signup'
+                      ? 'Register your hospital credentials to access the 4 core engines'
+                      : 'Sign in with credentials or select an instant institutional profile'}
                   </p>
                 </div>
                 <div className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[10px] font-mono font-bold self-start sm:self-auto flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   SYSTEM ACTIVE
                 </div>
+              </div>
+
+              {/* Sign In vs Sign Up Tabs */}
+              <div className="flex rounded-xl bg-zinc-950 p-1 border border-zinc-800 text-xs font-bold font-mono">
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('signin'); setError(''); }}
+                  className={`flex-1 py-2 rounded-lg transition cursor-pointer text-center ${
+                    authMode === 'signin'
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-black shadow-md font-black'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('signup'); setError(''); }}
+                  className={`flex-1 py-2 rounded-lg transition cursor-pointer text-center ${
+                    authMode === 'signup'
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-black shadow-md font-black'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  Create New Account
+                </button>
               </div>
 
               {/* Error Alert */}
@@ -271,41 +307,124 @@ export const LoginPage: React.FC = () => {
 
               {/* Credentials Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <div>
-                    <label className="text-[11px] font-bold text-zinc-300 block mb-1.5">
-                      Personnel Email
-                    </label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="doctor@hospital.local"
-                        className="w-full pl-10 pr-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-xs font-medium placeholder-zinc-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
-                      />
-                    </div>
-                  </div>
+                {authMode === 'signup' ? (
+                  <div className="space-y-3.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div>
+                        <label className="text-[11px] font-bold text-zinc-300 block mb-1.5">
+                          Full Name
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Dr. Rajesh Kumar"
+                          className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-xs font-medium placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition"
+                        />
+                      </div>
 
-                  <div>
-                    <label className="text-[11px] font-bold text-zinc-300 block mb-1.5">
-                      Security Password
-                    </label>
-                    <div className="relative">
-                      <Lock className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <div>
+                        <label className="text-[11px] font-bold text-zinc-300 block mb-1.5">
+                          Personnel Email
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="rajesh@hospital.local"
+                          className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-xs font-medium placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div>
+                        <label className="text-[11px] font-bold text-zinc-300 block mb-1.5">
+                          Hospital Facility
+                        </label>
+                        <select
+                          value={hospitalId}
+                          onChange={(e) => setHospitalId(e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-xs font-medium focus:outline-none focus:border-emerald-500 transition"
+                        >
+                          <option value="H001">KLE Hospital (Belagavi)</option>
+                          <option value="H002">District Hospital (Belagavi)</option>
+                          <option value="H003">City Care Hospital (Hubballi)</option>
+                          <option value="H004">Sahyadri Medical Center (Dharwad)</option>
+                          <option value="H005">Shree Hospital (Bengaluru)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-zinc-300 block mb-1.5">
+                          Staff Access Role
+                        </label>
+                        <select
+                          value={role}
+                          onChange={(e) => setRole(e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-xs font-medium focus:outline-none focus:border-emerald-500 transition"
+                        >
+                          <option value="HOSPITAL_ADMIN">Hospital Administrator</option>
+                          <option value="REQUEST_MANAGER">Emergency Request Manager</option>
+                          <option value="INVENTORY_MANAGER">Blood Bank Inventory Manager</option>
+                          <option value="SYSTEM_ADMIN">System Root Admin</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-bold text-zinc-300 block mb-1.5">
+                        Security Password
+                      </label>
                       <input
                         type="password"
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full pl-10 pr-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-xs font-medium placeholder-zinc-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+                        className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-xs font-medium placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition"
                       />
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <label className="text-[11px] font-bold text-zinc-300 block mb-1.5">
+                        Personnel Email
+                      </label>
+                      <div className="relative">
+                        <Mail className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="doctor@hospital.local"
+                          className="w-full pl-10 pr-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-xs font-medium placeholder-zinc-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-bold text-zinc-300 block mb-1.5">
+                        Security Password
+                      </label>
+                      <div className="relative">
+                        <Lock className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="password"
+                          required
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full pl-10 pr-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-xs font-medium placeholder-zinc-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <button
                   type="submit"
@@ -316,11 +435,11 @@ export const LoginPage: React.FC = () => {
                     {loading ? (
                       <>
                         <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                        <span>Authenticating System Token...</span>
+                        <span>Processing Authentication...</span>
                       </>
                     ) : (
                       <>
-                        <span>Sign In to Control Center</span>
+                        <span>{authMode === 'signup' ? 'Create Account & Open Dashboard' : 'Sign In to Control Center'}</span>
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}

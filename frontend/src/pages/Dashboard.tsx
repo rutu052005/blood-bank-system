@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api.js';
 import { BloodUnit, BloodRequest, Transfer, Alert, Hospital } from '../types/index.js';
 import { PriorityBadge } from '../components/PriorityBadge.js';
+import { EngineWorkflowModal, EngineId } from '../components/EngineWorkflowModal.js';
 import { Link } from 'react-router-dom';
 import {
   BarChart,
@@ -24,6 +25,12 @@ import {
   Clock,
   ChevronRight,
   Activity,
+  ShieldCheck,
+  Network,
+  Layers,
+  Sparkles,
+  ArrowRight,
+  Zap,
 } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
@@ -33,6 +40,7 @@ export const Dashboard: React.FC = () => {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [selectedEngine, setSelectedEngine] = useState<EngineId | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -184,6 +192,156 @@ export const Dashboard: React.FC = () => {
         </Link>
       </div>
 
+      {/* 4 CORE OPERATIONAL ENGINES (User-Understandable Naming & Clickable Working Modals) */}
+      <div className="space-y-4 pt-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <div className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              <span>CORE LOGISTICS ENGINES • CLICK ANY ENGINE TO VIEW DETAILED WORKING</span>
+            </div>
+            <h2 className="text-base font-black text-white tracking-tight mt-0.5">
+              The 4 Core Operational Systems
+            </h2>
+          </div>
+          <span className="text-[11px] text-zinc-400 font-mono">
+            Interactive Working & Algorithmic Traces
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          
+          {/* Engine 1: Inventory Sync */}
+          <div
+            onClick={() => setSelectedEngine('inventory-sync')}
+            className="bg-[#090d16] p-5 rounded-2xl border border-zinc-800 hover:border-emerald-500/60 transition-all duration-200 cursor-pointer shadow-md hover:shadow-emerald-500/10 group flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800/60">
+                  100% ACID MUTEX
+                </span>
+              </div>
+              <div>
+                <h3 className="text-xs font-black text-white group-hover:text-emerald-300 transition-colors">
+                  1. Live Inventory Sync
+                </h3>
+                <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                  Single-Writer Ledger
+                </div>
+              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed">
+                Deterministic row-level locking eliminates phantom stock, race conditions, and double-allocation across hospitals.
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-[11px] font-mono text-emerald-400 font-bold group-hover:translate-x-0.5 transition-transform">
+              <span>Explore Mutex Logic</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </div>
+
+          {/* Engine 2: Smart Routing (Dijkstra) */}
+          <div
+            onClick={() => setSelectedEngine('matching-dijkstra')}
+            className="bg-[#090d16] p-5 rounded-2xl border border-zinc-800 hover:border-teal-500/60 transition-all duration-200 cursor-pointer shadow-md hover:shadow-teal-500/10 group flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Network className="w-5 h-5" />
+                </div>
+                <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-teal-950 text-teal-300 border border-teal-800/60">
+                  DIJKSTRA O((V+E)log V)
+                </span>
+              </div>
+              <div>
+                <h3 className="text-xs font-black text-white group-hover:text-teal-300 transition-colors">
+                  2. Smart Route Optimizer
+                </h3>
+                <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                  Shortest-Path Graph Finder
+                </div>
+              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed">
+                Binary min-heap pathfinder computes minimum highway travel times and pairs emergencies with nearest viable stock.
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-[11px] font-mono text-teal-400 font-bold group-hover:translate-x-0.5 transition-transform">
+              <span>Run Dijkstra Pathfinder</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </div>
+
+          {/* Engine 3: Freshness & Shelf-Life (Min-Heap) */}
+          <div
+            onClick={() => setSelectedEngine('expiry-minheap')}
+            className="bg-[#090d16] p-5 rounded-2xl border border-zinc-800 hover:border-green-500/60 transition-all duration-200 cursor-pointer shadow-md hover:shadow-green-500/10 group flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-green-950 text-green-300 border border-green-800/60">
+                  MIN-HEAP FEFO
+                </span>
+              </div>
+              <div>
+                <h3 className="text-xs font-black text-white group-hover:text-green-300 transition-colors">
+                  3. Freshness & Expiry Engine
+                </h3>
+                <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                  Zero-Waste Protocol
+                </div>
+              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed">
+                Maintains a binary min-heap peeking root expiration in O(1) to surface oldest units first and trigger critical shelf-life alerts.
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-[11px] font-mono text-green-400 font-bold group-hover:translate-x-0.5 transition-transform">
+              <span>View Min-Heap Tree</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </div>
+
+          {/* Engine 4: Triage & MLFQ (OS Multilevel Queue) */}
+          <div
+            onClick={() => setSelectedEngine('scheduler-mlfq')}
+            className="bg-[#090d16] p-5 rounded-2xl border border-zinc-800 hover:border-cyan-500/60 transition-all duration-200 cursor-pointer shadow-md hover:shadow-cyan-500/10 group flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-800/60">
+                  OS MLFQ TRIAGE
+                </span>
+              </div>
+              <div>
+                <h3 className="text-xs font-black text-white group-hover:text-cyan-300 transition-colors">
+                  4. Priority Triage Dispatch
+                </h3>
+                <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                  Banker's Deadlock Safety
+                </div>
+              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed">
+                3-lane feedback queues preempt non-urgent holds during trauma crises with +15 compensation boost to guarantee zero patient starvation.
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-[11px] font-mono text-cyan-400 font-bold group-hover:translate-x-0.5 transition-transform">
+              <span>Test Triage & Preemption</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </div>
+
+        </div>
+      </div>
+
       {/* Visual Analytics Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Bar Chart: Available Units by Blood Group */}
@@ -285,6 +443,18 @@ export const Dashboard: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Interactive Engine Workflow Modal */}
+      {selectedEngine && (
+        <EngineWorkflowModal
+          engineId={selectedEngine}
+          onClose={() => setSelectedEngine(null)}
+          onSelectEngine={(id) => setSelectedEngine(id)}
+          hospitals={hospitals}
+          inventory={inventory}
+          requests={requests}
+        />
+      )}
     </div>
   );
 };
