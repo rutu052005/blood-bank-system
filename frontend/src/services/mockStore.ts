@@ -240,10 +240,10 @@ export class MockDataStore {
   getEngineStatus() {
     return {
       engines: [
-        { id: 'inventory-sync', name: 'Inventory Sync Engine', subject: 'DBMS LEDGER', status: this.enginePaused['inventory-sync'] ? 'PAUSED' : 'RUNNING', algorithm: 'Single-Writer Mutex & Row Locks', queueDepth: '0 waiting' },
-        { id: 'priority-scheduling', name: 'Priority Scheduling Engine', subject: 'OS QUEUES', status: this.enginePaused['priority-scheduling'] ? 'PAUSED' : 'RUNNING', algorithm: 'OS MLFQ & Banker Safety', queueDepth: `${this.requests.length} requests` },
-        { id: 'web-engine', name: 'Web Engine', subject: 'FULL-STACK WEB', status: this.enginePaused['web-engine'] ? 'PAUSED' : 'RUNNING', algorithm: 'REST API, SSE Stream & Reactive UI', queueDepth: 'Active HTTP/2' },
-        { id: 'match-expiry', name: 'Match and Expiry Engine', subject: 'DSA GRAPH & HEAP', status: this.enginePaused['match-expiry'] ? 'PAUSED' : 'RUNNING', algorithm: 'Dijkstra Path + Min-Heap FEFO', queueDepth: `${this.inventory.length} units` },
+        { id: 'inventory-sync', name: 'Inventory sync engine', subject: 'DBMS LEDGER', status: this.enginePaused['inventory-sync'] ? 'PAUSED' : 'RUNNING', algorithm: 'Single-Writer Mutex & Row Locks', queueDepth: '0 waiting' },
+        { id: 'priority-scheduling', name: 'Priority scheduling engine', subject: 'OS QUEUES', status: this.enginePaused['priority-scheduling'] ? 'PAUSED' : 'RUNNING', algorithm: 'OS MLFQ & Banker Safety', queueDepth: `${this.requests.length} requests` },
+        { id: 'web-engine', name: 'Web engine', subject: 'FULL-STACK WEB', status: this.enginePaused['web-engine'] ? 'PAUSED' : 'RUNNING', algorithm: 'REST API, SSE Stream & Reactive UI', queueDepth: 'Active HTTP/2' },
+        { id: 'match-expiry', name: 'Match and expiry engine', subject: 'DSA GRAPH & HEAP', status: this.enginePaused['match-expiry'] ? 'PAUSED' : 'RUNNING', algorithm: 'Dijkstra Path + Min-Heap FEFO', queueDepth: `${this.inventory.length} units` },
       ],
       clock: {
         now: new Date(Date.now() + this.offsetHours * 3600000).toISOString(),

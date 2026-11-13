@@ -215,7 +215,7 @@ export const EngineWorkflowModal: React.FC<EngineWorkflowModalProps> = ({
   // Metadata for the 4 Engines specified by the user
   const engineMeta = {
     'inventory-sync': {
-      title: 'Inventory Sync Engine',
+      title: 'Inventory sync engine',
       subtitle: 'Deterministic Single-Writer Mutex & Row-Level ACID Consistency',
       icon: ShieldCheck,
       badge: '100% ACID MUTEX',
@@ -223,7 +223,7 @@ export const EngineWorkflowModal: React.FC<EngineWorkflowModalProps> = ({
       tagline: 'Guarantees zero double-allocation, zero race conditions, and zero phantom inventory across all 5 participating hospitals.',
     },
     'priority-scheduling': {
-      title: 'Priority Scheduling Engine',
+      title: 'Priority scheduling engine',
       subtitle: 'Multilevel Feedback Queue (MLFQ) & Banker’s Deadlock Avoidance',
       icon: Layers,
       badge: 'OS MLFQ • BANKER SAFE',
@@ -231,7 +231,7 @@ export const EngineWorkflowModal: React.FC<EngineWorkflowModalProps> = ({
       tagline: 'Automates emergency trauma preemption with +15 point compensation boost, ensuring critical surgeries are expedited while routine patient queues never starve.',
     },
     'web-engine': {
-      title: 'Web Engine',
+      title: 'Web engine',
       subtitle: 'Reactive Full-Stack Portal, Real-Time SSE Event Stream & REST API Gateway',
       icon: Globe,
       badge: 'REAL-TIME SSE • HTTP/2',
@@ -239,7 +239,7 @@ export const EngineWorkflowModal: React.FC<EngineWorkflowModalProps> = ({
       tagline: 'Powers sub-50ms reactive user interfaces, real-time server-sent event push notifications, and resilient offline self-healing storage across hospital devices.',
     },
     'match-expiry': {
-      title: 'Match and Expiry Engine',
+      title: 'Match and expiry engine',
       subtitle: 'Dijkstra Shortest-Path Graph Pathfinder & Binary Min-Heap FEFO Expiry',
       icon: Network,
       badge: 'DIJKSTRA + MIN-HEAP FEFO',
@@ -293,10 +293,10 @@ export const EngineWorkflowModal: React.FC<EngineWorkflowModalProps> = ({
           {/* Quick Engine Switcher Bar for the 4 Engines */}
           <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2 pt-4 border-t border-zinc-900">
             {[
-              { id: 'inventory-sync', label: '1. Inventory Sync Engine', sub: 'DBMS Mutex' },
-              { id: 'priority-scheduling', label: '2. Priority Scheduling Engine', sub: 'OS MLFQ Queue' },
-              { id: 'web-engine', label: '3. Web Engine', sub: 'Real-Time SSE' },
-              { id: 'match-expiry', label: '4. Match & Expiry Engine', sub: 'Dijkstra + Heap' },
+              { id: 'inventory-sync', label: '1. Inventory sync engine', sub: 'DBMS Mutex' },
+              { id: 'priority-scheduling', label: '2. Priority scheduling engine', sub: 'OS MLFQ Queue' },
+              { id: 'web-engine', label: '3. Web engine', sub: 'Real-Time SSE' },
+              { id: 'match-expiry', label: '4. Match and expiry engine', sub: 'Dijkstra + Heap' },
             ].map((tab) => (
               <button
                 key={tab.id}

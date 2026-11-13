@@ -352,7 +352,7 @@ export const LandingPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-lg font-black text-slate-900 group-hover:text-[#00b4d8] transition-colors">
-                  1. Inventory Sync Engine
+                  1. Inventory sync engine
                 </h3>
                 <div className="text-xs text-slate-500 font-medium mt-0.5">
                   Single-Writer Concurrency Mutex & Row Locks
@@ -384,7 +384,7 @@ export const LandingPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-lg font-black text-slate-900 group-hover:text-[#00b4d8] transition-colors">
-                  2. Priority Scheduling Engine
+                  2. Priority scheduling engine
                 </h3>
                 <div className="text-xs text-slate-500 font-medium mt-0.5">
                   3-Lane Triage Queuing & Starvation Prevention
@@ -416,7 +416,7 @@ export const LandingPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-lg font-black text-slate-900 group-hover:text-[#00b4d8] transition-colors">
-                  3. Web Engine
+                  3. Web engine
                 </h3>
                 <div className="text-xs text-slate-500 font-medium mt-0.5">
                   Reactive Multi-Hospital Telemetry Portal
@@ -448,7 +448,7 @@ export const LandingPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-lg font-black text-slate-900 group-hover:text-[#00b4d8] transition-colors">
-                  4. Match and Expiry Engine
+                  4. Match and expiry engine
                 </h3>
                 <div className="text-xs text-slate-500 font-medium mt-0.5">
                   Shortest Route Pathfinder & FEFO Expiry Tracker
@@ -766,10 +766,10 @@ export const LandingPage: React.FC = () => {
                 The 4 System Engines
               </div>
               <ul className="space-y-1.5 text-zinc-400 text-[11px]">
-                <li><button onClick={() => setSelectedEngineModal('inventory-sync')} className="hover:text-[#00b4d8] transition text-left cursor-pointer">• 1. Inventory Sync Engine</button></li>
-                <li><button onClick={() => setSelectedEngineModal('priority-scheduling')} className="hover:text-[#00b4d8] transition text-left cursor-pointer">• 2. Priority Scheduling Engine</button></li>
-                <li><button onClick={() => setSelectedEngineModal('web-engine')} className="hover:text-[#00b4d8] transition text-left cursor-pointer">• 3. Web Engine</button></li>
-                <li><button onClick={() => setSelectedEngineModal('match-expiry')} className="hover:text-[#00b4d8] transition text-left cursor-pointer">• 4. Match and Expiry Engine</button></li>
+                <li><button onClick={() => setSelectedEngineModal('inventory-sync')} className="hover:text-[#00b4d8] transition text-left cursor-pointer">• 1. Inventory sync engine</button></li>
+                <li><button onClick={() => setSelectedEngineModal('priority-scheduling')} className="hover:text-[#00b4d8] transition text-left cursor-pointer">• 2. Priority scheduling engine</button></li>
+                <li><button onClick={() => setSelectedEngineModal('web-engine')} className="hover:text-[#00b4d8] transition text-left cursor-pointer">• 3. Web engine</button></li>
+                <li><button onClick={() => setSelectedEngineModal('match-expiry')} className="hover:text-[#00b4d8] transition text-left cursor-pointer">• 4. Match and expiry engine</button></li>
               </ul>
             </div>
 

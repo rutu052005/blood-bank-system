@@ -3,6 +3,7 @@ import { api } from '../services/api.js';
 import { BloodUnit, BloodRequest, Transfer, Alert, Hospital } from '../types/index.js';
 import { PriorityBadge } from '../components/PriorityBadge.js';
 import { EngineWorkflowModal, EngineId } from '../components/EngineWorkflowModal.js';
+import { MatchAndExpiryVisualizer } from '../components/MatchAndExpiryVisualizer.js';
 import { Link } from 'react-router-dom';
 import {
   BarChart,
@@ -32,6 +33,7 @@ import {
   Sparkles,
   ArrowRight,
   Zap,
+  Flame,
 } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
@@ -42,6 +44,71 @@ export const Dashboard: React.FC = () => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedEngine, setSelectedEngine] = useState<EngineId | null>(null);
+  const [activeVisualEngine, setActiveVisualEngine] = useState<EngineId>('match-expiry');
+
+  // In-page visual simulator states for other engines
+  const [mutexRunning, setMutexRunning] = useState<boolean>(false);
+  const [mutexLogs, setMutexLogs] = useState<string[]>([
+    'Single-writer transaction mutex ready. 100% ACID consistency active.',
+    'System Invariant: Available = Total (30) - Held (5) - In-Transit (3) = 22 Units.',
+  ]);
+
+  const [mlfqRunning, setMlfqRunning] = useState<boolean>(false);
+  const [preemptionTriggered, setPreemptionTriggered] = useState<boolean>(false);
+  const [mlfqLog, setMlfqLog] = useState<string>(
+    '3-Lane MLFQ active. Lane 0 (Emergency Base 100), Lane 1 (Urgent Base 50), Lane 2 (Routine Base 10). Ready for trauma preemption.'
+  );
+
+  const [webStreaming, setWebStreaming] = useState<boolean>(false);
+  const [webPackets, setWebPackets] = useState<Array<{ id: string; time: string; event: string; latency: string; status: string }>>([
+    { id: 'EVT001', time: '15:20:02.102', event: 'SSE_STREAM_ESTABLISHED', latency: '8ms', status: '200 OK' },
+    { id: 'EVT002', time: '15:20:05.418', event: 'STOCK_HOLD_BROADCAST (H001 -> H003)', latency: '12ms', status: 'SYNCHRONIZED' },
+    { id: 'EVT003', time: '15:20:10.820', event: 'HEARTBEAT_CLOCK_SYNC (+0h)', latency: '4ms', status: 'ACTIVE' },
+  ]);
+
+  const handleRunMutexSimulation = () => {
+    setMutexRunning(true);
+    setMutexLogs(['Dispatched 10 concurrent allocation threads across regional hospitals...']);
+    setTimeout(() => {
+      setMutexLogs([
+        'T0: Thread 1 requests Lock(H001:INV001, qty: 2). Mutex acquired.',
+        'T1: Thread 2 requests Lock(H001:INV001, qty: 1). Enqueued behind Thread 1.',
+        'T2: Invariant Check: Available (10) >= Requested (2) -> PASS. Held count updated: 2.',
+        'T3: Thread 1 releases lock. Thread 2 acquires Lock(H001:INV001).',
+        'T4: Thread 3 & 4 request cross-hospital hold (H001 & H002). Ordered by Ascending ID: Lock(H001) -> Lock(H002). Cyclic circular wait impossible.',
+        'T5: All 10 parallel transactions completed. 0 Deadlocks, 0 Overdrafts. 100% ACID consistency verified.',
+      ]);
+      setMutexRunning(false);
+    }, 700);
+  };
+
+  const handleTriggerPreemption = () => {
+    setMlfqRunning(true);
+    setTimeout(() => {
+      setPreemptionTriggered(true);
+      setMlfqLog(
+        '[PREEMPTION EXECUTED] Code-Red Emergency request REQ003 (Shree Hospital) preempted tentative hold on Unit INV008 held by Routine REQ005. Victim REQ005 awarded +15 point compensation boost and elevated to Head of Lane 1 (Urgent). Zero patient starvation.'
+      );
+      setMlfqRunning(false);
+    }, 600);
+  };
+
+  const handleBroadcastEvent = () => {
+    setWebStreaming(true);
+    setTimeout(() => {
+      const now = new Date();
+      const timeStr = now.toTimeString().split(' ')[0] + '.' + now.getMilliseconds();
+      const newPacket = {
+        id: `EVT00${webPackets.length + 1}`,
+        time: timeStr,
+        event: 'EMERGENCY_DISPATCH_PUSH (REQ003 Matched)',
+        latency: `${Math.floor(Math.random() * 8 + 6)}ms`,
+        status: 'BROADCASTED',
+      };
+      setWebPackets(prev => [newPacket, ...prev]);
+      setWebStreaming(false);
+    }, 400);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -193,42 +260,60 @@ export const Dashboard: React.FC = () => {
         </Link>
       </div>
 
-      {/* 4 CORE OPERATIONAL ENGINES (User-Understandable Naming & Clickable Working Modals) */}
+      {/* 4 CORE OPERATIONAL ENGINES (User-Understandable Naming & In-Page Visual Implementations) */}
       <div className="space-y-4 pt-2">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <div className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span>CORE LOGISTICS ENGINES • CLICK ANY ENGINE TO VIEW DETAILED WORKING</span>
+              <span>CORE LOGISTICS ENGINES • CLICK ANY ENGINE TO VIEW IN-PAGE VISUAL WORKING</span>
             </div>
             <h2 className="text-base font-black text-white tracking-tight mt-0.5">
               The 4 Core Operational Systems
             </h2>
           </div>
-          <span className="text-[11px] text-zinc-400 font-mono">
-            Interactive Working & Algorithmic Traces
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-zinc-400 font-mono">
+              Live In-Page Algorithmic Workspace
+            </span>
+            <button
+              onClick={() => setSelectedEngine(activeVisualEngine)}
+              className="text-[10px] font-mono font-bold text-emerald-400 hover:text-emerald-300 underline cursor-pointer"
+            >
+              Open Fullscreen Inspector →
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           
-          {/* Engine 1: Inventory Sync Engine */}
+          {/* Engine 1: Inventory sync engine */}
           <div
-            onClick={() => setSelectedEngine('inventory-sync')}
-            className="bg-[#090d16] p-5 rounded-2xl border border-zinc-800 hover:border-emerald-500/60 transition-all duration-200 cursor-pointer shadow-md hover:shadow-emerald-500/10 group flex flex-col justify-between"
+            onClick={() => setActiveVisualEngine('inventory-sync')}
+            className={`p-5 rounded-2xl border transition-all duration-200 cursor-pointer shadow-md group flex flex-col justify-between ${
+              activeVisualEngine === 'inventory-sync'
+                ? 'bg-slate-900 border-emerald-400 ring-2 ring-emerald-500/50 shadow-emerald-500/20'
+                : 'bg-[#090d16] border-zinc-800 hover:border-emerald-500/60'
+            }`}
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
-                <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800/60">
-                  100% ACID MUTEX
-                </span>
+                {activeVisualEngine === 'inventory-sync' ? (
+                  <span className="text-[9px] font-mono font-black px-2 py-0.5 rounded-full bg-emerald-500 text-black animate-pulse">
+                    ● ACTIVE IN PAGE
+                  </span>
+                ) : (
+                  <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800/60">
+                    100% ACID MUTEX
+                  </span>
+                )}
               </div>
               <div>
                 <h3 className="text-xs font-black text-white group-hover:text-emerald-300 transition-colors">
-                  1. Inventory Sync Engine
+                  1. Inventory sync engine
                 </h3>
                 <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
                   Single-Writer Ledger Mutex
@@ -239,28 +324,38 @@ export const Dashboard: React.FC = () => {
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-[11px] font-mono text-emerald-400 font-bold group-hover:translate-x-0.5 transition-transform">
-              <span>Explore Mutex Logic</span>
+              <span>{activeVisualEngine === 'inventory-sync' ? 'Active Below' : 'Show Visual Mutex'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </div>
           </div>
 
-          {/* Engine 2: Priority Scheduling Engine */}
+          {/* Engine 2: Priority scheduling engine */}
           <div
-            onClick={() => setSelectedEngine('priority-scheduling')}
-            className="bg-[#090d16] p-5 rounded-2xl border border-zinc-800 hover:border-teal-500/60 transition-all duration-200 cursor-pointer shadow-md hover:shadow-teal-500/10 group flex flex-col justify-between"
+            onClick={() => setActiveVisualEngine('priority-scheduling')}
+            className={`p-5 rounded-2xl border transition-all duration-200 cursor-pointer shadow-md group flex flex-col justify-between ${
+              activeVisualEngine === 'priority-scheduling'
+                ? 'bg-slate-900 border-teal-400 ring-2 ring-teal-500/50 shadow-teal-500/20'
+                : 'bg-[#090d16] border-zinc-800 hover:border-teal-500/60'
+            }`}
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Layers className="w-5 h-5" />
                 </div>
-                <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-teal-950 text-teal-300 border border-teal-800/60">
-                  OS MLFQ TRIAGE
-                </span>
+                {activeVisualEngine === 'priority-scheduling' ? (
+                  <span className="text-[9px] font-mono font-black px-2 py-0.5 rounded-full bg-teal-400 text-black animate-pulse">
+                    ● ACTIVE IN PAGE
+                  </span>
+                ) : (
+                  <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-teal-950 text-teal-300 border border-teal-800/60">
+                    OS MLFQ TRIAGE
+                  </span>
+                )}
               </div>
               <div>
                 <h3 className="text-xs font-black text-white group-hover:text-teal-300 transition-colors">
-                  2. Priority Scheduling Engine
+                  2. Priority scheduling engine
                 </h3>
                 <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
                   Banker's Deadlock Safety
@@ -271,28 +366,38 @@ export const Dashboard: React.FC = () => {
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-[11px] font-mono text-teal-400 font-bold group-hover:translate-x-0.5 transition-transform">
-              <span>Test Triage & Preemption</span>
+              <span>{activeVisualEngine === 'priority-scheduling' ? 'Active Below' : 'Show Visual Triage'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </div>
           </div>
 
-          {/* Engine 3: Web Engine */}
+          {/* Engine 3: Web engine */}
           <div
-            onClick={() => setSelectedEngine('web-engine')}
-            className="bg-[#090d16] p-5 rounded-2xl border border-zinc-800 hover:border-cyan-500/60 transition-all duration-200 cursor-pointer shadow-md hover:shadow-cyan-500/10 group flex flex-col justify-between"
+            onClick={() => setActiveVisualEngine('web-engine')}
+            className={`p-5 rounded-2xl border transition-all duration-200 cursor-pointer shadow-md group flex flex-col justify-between ${
+              activeVisualEngine === 'web-engine'
+                ? 'bg-slate-900 border-cyan-400 ring-2 ring-cyan-500/50 shadow-cyan-500/20'
+                : 'bg-[#090d16] border-zinc-800 hover:border-cyan-500/60'
+            }`}
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Globe className="w-5 h-5" />
                 </div>
-                <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-800/60">
-                  REAL-TIME SSE STREAM
-                </span>
+                {activeVisualEngine === 'web-engine' ? (
+                  <span className="text-[9px] font-mono font-black px-2 py-0.5 rounded-full bg-cyan-400 text-black animate-pulse">
+                    ● ACTIVE IN PAGE
+                  </span>
+                ) : (
+                  <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-800/60">
+                    REAL-TIME SSE
+                  </span>
+                )}
               </div>
               <div>
                 <h3 className="text-xs font-black text-white group-hover:text-cyan-300 transition-colors">
-                  3. Web Engine
+                  3. Web engine
                 </h3>
                 <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
                   Reactive Multi-Hospital Portal
@@ -303,28 +408,38 @@ export const Dashboard: React.FC = () => {
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-[11px] font-mono text-cyan-400 font-bold group-hover:translate-x-0.5 transition-transform">
-              <span>View Web Stream</span>
+              <span>{activeVisualEngine === 'web-engine' ? 'Active Below' : 'Show Visual Stream'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </div>
           </div>
 
-          {/* Engine 4: Match and Expiry Engine */}
+          {/* Engine 4: Match and expiry engine */}
           <div
-            onClick={() => setSelectedEngine('match-expiry')}
-            className="bg-[#090d16] p-5 rounded-2xl border border-zinc-800 hover:border-green-500/60 transition-all duration-200 cursor-pointer shadow-md hover:shadow-green-500/10 group flex flex-col justify-between"
+            onClick={() => setActiveVisualEngine('match-expiry')}
+            className={`p-5 rounded-2xl border transition-all duration-200 cursor-pointer shadow-md group flex flex-col justify-between ${
+              activeVisualEngine === 'match-expiry'
+                ? 'bg-slate-900 border-green-400 ring-2 ring-green-500/50 shadow-green-500/20'
+                : 'bg-[#090d16] border-zinc-800 hover:border-green-500/60'
+            }`}
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Network className="w-5 h-5" />
                 </div>
-                <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-green-950 text-green-300 border border-green-800/60">
-                  DIJKSTRA + MIN-HEAP
-                </span>
+                {activeVisualEngine === 'match-expiry' ? (
+                  <span className="text-[9px] font-mono font-black px-2 py-0.5 rounded-full bg-green-400 text-black animate-pulse">
+                    ● ACTIVE IN PAGE
+                  </span>
+                ) : (
+                  <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-green-950 text-green-300 border border-green-800/60">
+                    DIJKSTRA + HEAP
+                  </span>
+                )}
               </div>
               <div>
                 <h3 className="text-xs font-black text-white group-hover:text-green-300 transition-colors">
-                  4. Match and Expiry Engine
+                  4. Match and expiry engine
                 </h3>
                 <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
                   Shortest Route & FEFO Tracker
@@ -335,11 +450,217 @@ export const Dashboard: React.FC = () => {
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-[11px] font-mono text-green-400 font-bold group-hover:translate-x-0.5 transition-transform">
-              <span>Run Dijkstra & Heap</span>
+              <span>{activeVisualEngine === 'match-expiry' ? 'Active Below' : 'Show Dijkstra & Heap'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </div>
           </div>
 
+        </div>
+
+        {/* IN-PAGE VISUAL IMPLEMENTATION WORKSPACE */}
+        <div className="pt-2">
+          {activeVisualEngine === 'match-expiry' && (
+            <MatchAndExpiryVisualizer />
+          )}
+
+          {activeVisualEngine === 'inventory-sync' && (
+            <div className="bg-[#090d16] border border-zinc-800 rounded-3xl p-6 shadow-2xl space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-800">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-400">
+                      IN-PAGE VISUAL WORKSPACE
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-black text-white tracking-tight mt-1 flex items-center gap-2">
+                    <ShieldCheck className="w-6 h-6 text-emerald-400" />
+                    Inventory sync engine: Concurrency Mutex Simulator
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Single-writer transactional locking with ascending ID acquisition hierarchy.
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleRunMutexSimulation}
+                  disabled={mutexRunning}
+                  className="bg-emerald-500 hover:bg-emerald-400 text-black font-black px-5 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition disabled:opacity-50"
+                >
+                  {mutexRunning ? (
+                    <span>Executing 10 Threads...</span>
+                  ) : (
+                    <>
+                      <Zap className="w-4 h-4 fill-black" />
+                      <span>Dispatch 10 Parallel Allocation Threads</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-black/60 p-4 rounded-xl border border-zinc-800">
+                  <div className="text-xs font-mono font-bold text-zinc-400 mb-1">Row Lock Status</div>
+                  <div className="text-xl font-black text-emerald-400 font-mono">EXCLUSIVE (ACID)</div>
+                  <div className="text-[11px] text-zinc-500 mt-1">Single-Writer Mutex: Active</div>
+                </div>
+
+                <div className="bg-black/60 p-4 rounded-xl border border-zinc-800">
+                  <div className="text-xs font-mono font-bold text-zinc-400 mb-1">Deadlock Prevention</div>
+                  <div className="text-xl font-black text-white font-mono">ASCENDING ID HIERARCHY</div>
+                  <div className="text-[11px] text-zinc-500 mt-1">H001 &lt; H002 &lt; H003 (No Cycles)</div>
+                </div>
+
+                <div className="bg-black/60 p-4 rounded-xl border border-zinc-800">
+                  <div className="text-xs font-mono font-bold text-zinc-400 mb-1">Reserve Safety Invariant</div>
+                  <div className="text-xl font-black text-emerald-400 font-mono">VERIFIED 100%</div>
+                  <div className="text-[11px] text-zinc-500 mt-1">Available = Total - Held - InTransit</div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-black border border-zinc-800 font-mono text-xs text-zinc-300 space-y-1.5 max-h-[180px] overflow-y-auto">
+                <div className="text-[10px] text-zinc-500 uppercase border-b border-zinc-800 pb-1 mb-2 font-bold flex items-center justify-between">
+                  <span>LIVE MUTEX CONCURRENCY TRACE LOG</span>
+                  <span className="text-emerald-400">STATUS: HEALTHY</span>
+                </div>
+                {mutexLogs.map((log, idx) => (
+                  <div key={idx} className={idx === 0 ? 'text-emerald-300' : 'text-zinc-400'}>
+                    &gt; {log}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeVisualEngine === 'priority-scheduling' && (
+            <div className="bg-[#090d16] border border-zinc-800 rounded-3xl p-6 shadow-2xl space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-800">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-teal-400 animate-pulse" />
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-teal-400">
+                      IN-PAGE VISUAL WORKSPACE
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-black text-white tracking-tight mt-1 flex items-center gap-2">
+                    <Layers className="w-6 h-6 text-teal-400" />
+                    Priority scheduling engine: 3-Lane MLFQ Visualizer
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Multilevel Feedback Queues with dynamic aging points and trauma emergency preemption.
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleTriggerPreemption}
+                  disabled={mlfqRunning}
+                  className="bg-teal-500 hover:bg-teal-400 text-black font-black px-5 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-teal-500/20 transition disabled:opacity-50"
+                >
+                  <Flame className="w-4 h-4 fill-black" />
+                  <span>Simulate Code-Red Trauma Preemption (+15 Boost)</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-rose-950/30 border border-rose-800/60 p-4 rounded-xl">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-black text-rose-300 uppercase font-mono">LANE 0: EMERGENCY</span>
+                    <span className="text-[10px] font-mono bg-rose-900 text-rose-200 px-1.5 py-0.5 rounded">BASE 100</span>
+                  </div>
+                  <div className="text-xs text-zinc-300 font-mono">Immediate Preemption Enabled</div>
+                  <div className="text-[11px] text-rose-400 mt-2 font-bold">Priority Boost: +10 / tick</div>
+                </div>
+
+                <div className="bg-amber-950/30 border border-amber-800/60 p-4 rounded-xl">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-black text-amber-300 uppercase font-mono">LANE 1: URGENT</span>
+                    <span className="text-[10px] font-mono bg-amber-900 text-amber-200 px-1.5 py-0.5 rounded">BASE 50</span>
+                  </div>
+                  <div className="text-xs text-zinc-300 font-mono">Surgical & ICU Reservations</div>
+                  <div className="text-[11px] text-amber-400 mt-2 font-bold">Priority Boost: +2 / tick</div>
+                </div>
+
+                <div className="bg-slate-900/60 border border-slate-700/60 p-4 rounded-xl">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-black text-slate-300 uppercase font-mono">LANE 2: ROUTINE</span>
+                    <span className="text-[10px] font-mono bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">BASE 10</span>
+                  </div>
+                  <div className="text-xs text-zinc-300 font-mono">Elective Scheduled Operations</div>
+                  <div className="text-[11px] text-slate-400 mt-2 font-bold">Aging: +1 / tick (No Starvation)</div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-black border border-zinc-800 font-mono text-xs text-teal-300">
+                &gt; {mlfqLog}
+              </div>
+            </div>
+          )}
+
+          {activeVisualEngine === 'web-engine' && (
+            <div className="bg-[#090d16] border border-zinc-800 rounded-3xl p-6 shadow-2xl space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-800">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-cyan-400">
+                      IN-PAGE VISUAL WORKSPACE
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-black text-white tracking-tight mt-1 flex items-center gap-2">
+                    <Globe className="w-6 h-6 text-cyan-400" />
+                    Web engine: Reactive Telemetry & Live SSE Push
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Real-time Server-Sent Events stream with sub-15ms packet latency across connected hospitals.
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleBroadcastEvent}
+                  disabled={webStreaming}
+                  className="bg-cyan-500 hover:bg-cyan-400 text-black font-black px-5 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-cyan-500/20 transition disabled:opacity-50"
+                >
+                  <Activity className="w-4 h-4 fill-black" />
+                  <span>Broadcast Live SSE Push Packet</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-black/60 p-4 rounded-xl border border-zinc-800">
+                  <div className="text-xs font-mono font-bold text-zinc-400 mb-1">Packet Latency</div>
+                  <div className="text-2xl font-black text-cyan-400 font-mono">&lt; 15ms</div>
+                  <div className="text-[11px] text-zinc-500 mt-1">HTTP/2 Persistent Stream</div>
+                </div>
+
+                <div className="bg-black/60 p-4 rounded-xl border border-zinc-800">
+                  <div className="text-xs font-mono font-bold text-zinc-400 mb-1">Client Connections</div>
+                  <div className="text-2xl font-black text-white font-mono">5 Hospitals Active</div>
+                  <div className="text-[11px] text-zinc-500 mt-1">Live Multi-Node Synchronization</div>
+                </div>
+
+                <div className="bg-black/60 p-4 rounded-xl border border-zinc-800">
+                  <div className="text-xs font-mono font-bold text-zinc-400 mb-1">Offline Self-Healing</div>
+                  <div className="text-2xl font-black text-emerald-400 font-mono">ONLINE FALLBACK</div>
+                  <div className="text-[11px] text-zinc-500 mt-1">IndexedDB / LocalStore Sync</div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-black border border-zinc-800 font-mono text-xs text-zinc-300 space-y-2 max-h-[180px] overflow-y-auto">
+                <div className="text-[10px] text-zinc-500 uppercase border-b border-zinc-800 pb-1 mb-2 font-bold flex items-center justify-between">
+                  <span>LIVE SSE PACKET STREAM</span>
+                  <span className="text-cyan-400">STREAM: ACTIVE</span>
+                </div>
+                {webPackets.map((pkt) => (
+                  <div key={pkt.id} className="flex items-center justify-between text-[11px]">
+                    <span className="text-zinc-500">[{pkt.time}]</span>
+                    <span className="text-cyan-300 font-bold">{pkt.event}</span>
+                    <span className="text-zinc-400">{pkt.latency}</span>
+                    <span className="text-emerald-400 font-bold">{pkt.status}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
