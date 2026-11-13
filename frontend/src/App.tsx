@@ -7,6 +7,7 @@ import { Sidebar } from './components/Sidebar.js';
 import { PersistentBanner } from './components/PersistentBanner.js';
 
 // Pages
+import { LandingPage } from './pages/LandingPage.js';
 import { LoginPage } from './pages/LoginPage.js';
 import { Dashboard } from './pages/Dashboard.js';
 import { EngineControlCenter } from './pages/EngineControlCenter.js';
@@ -50,6 +51,7 @@ const ProtectedLayout: React.FC = () => {
           <main className="flex-1 p-6 overflow-y-auto max-w-7xl mx-auto w-full bg-[#030712]">
             <Routes>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/engine-control" element={<EngineControlCenter />} />
               <Route path="/inventory" element={<InventoryPage />} />
               <Route path="/inventory/:id" element={<InventoryDetail />} />
@@ -64,7 +66,7 @@ const ProtectedLayout: React.FC = () => {
               <Route path="/users" element={<UsersPage />} />
               <Route path="/database-viewer" element={<DatabaseViewer />} />
               <Route path="/settings" element={<SettingsPage />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </main>
         </div>
@@ -78,6 +80,7 @@ export const App: React.FC = () => {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/*" element={<ProtectedLayout />} />
         </Routes>

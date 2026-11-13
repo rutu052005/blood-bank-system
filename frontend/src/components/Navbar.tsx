@@ -39,7 +39,7 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         
         {/* Logo / Brand */}
-        <Link to="/" className="flex items-center gap-3 group">
+        <Link to="/dashboard" className="flex items-center gap-3 group">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-emerald-400 flex items-center justify-center font-black text-lg text-black shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
             <Droplets className="w-5 h-5 text-black" />
           </div>

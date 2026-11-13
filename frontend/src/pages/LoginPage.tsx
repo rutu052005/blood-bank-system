@@ -30,7 +30,7 @@ export const LoginPage: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/', { replace: true });
+      navigate('/dashboard', { replace: true });
     }
   }, [user, navigate]);
 
@@ -40,7 +40,7 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
     try {
       await login({ email, password });
-      navigate('/');
+      navigate('/dashboard');
     } catch (err: any) {
       let msg = err.message || 'Login failed';
       if (msg.includes('500') || msg.includes('ECONNREFUSED') || msg.includes('Failed to fetch')) {
@@ -60,7 +60,7 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
     try {
       await login({ email: userEmail, password: 'demo123' });
-      navigate('/');
+      navigate('/dashboard');
     } catch (err: any) {
       let msg = err.message || 'Login failed';
       if (msg.includes('500') || msg.includes('ECONNREFUSED') || msg.includes('Failed to fetch')) {

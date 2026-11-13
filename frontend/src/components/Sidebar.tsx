@@ -15,13 +15,15 @@ import {
   ShieldCheck,
   Database,
   Settings,
+  Globe,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
   const { hasRole } = useAuth();
 
   const links = [
-    { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/', label: 'Home Portal', icon: Globe },
     { to: '/engine-control', label: 'Engine Control Center', icon: Cpu, badge: 'CORE', highlight: true },
     { to: '/inventory', label: 'Inventory FEFO', icon: Droplets },
     { to: '/requests', label: 'Requests & Scheduling', icon: FileSpreadsheet },
