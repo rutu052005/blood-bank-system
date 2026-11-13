@@ -1,11 +1,11 @@
 import React from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 
 export const PersistentBanner: React.FC = () => {
   return (
-    <div className="bg-amber-500 text-slate-950 px-4 py-1.5 text-xs font-bold text-center flex items-center justify-center gap-2 shadow-sm border-b border-amber-600">
-      <AlertTriangle className="w-4 h-4 shrink-0 animate-bounce text-slate-950" />
-      <span>DEMO DATA ONLY — NOT FOR CLINICAL OR OPERATIONAL USE. System decisions require human authorization.</span>
+    <div className="bg-[#030712] border-b border-emerald-500/30 text-emerald-300 px-4 py-1.5 text-xs font-mono font-bold text-center flex items-center justify-center gap-2 tracking-wide shadow-sm">
+      <ShieldAlert className="w-4 h-4 shrink-0 text-emerald-400 animate-pulse" />
+      <span>ACADEMIC DEMO GRID — SIMULATED HEALTHCARE LEDGER. Clinical transfusion requires verified medical signoff.</span>
     </div>
   );
 };

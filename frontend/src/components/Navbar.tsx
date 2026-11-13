@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.js';
 import { useSimClock } from '../context/SimClockContext.js';
-import { Bell, Clock, User as UserIcon, LogOut, Activity, FastForward, RotateCcw } from 'lucide-react';
+import { Bell, Clock, LogOut, FastForward, RotateCcw, Droplets } from 'lucide-react';
 import { api } from '../services/api.js';
 import { Alert } from '../types/index.js';
 import { Link } from 'react-router-dom';
@@ -35,63 +35,64 @@ export const Navbar: React.FC = () => {
   });
 
   return (
-    <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
+    <header className="bg-black/95 backdrop-blur-xl text-white border-b border-zinc-800/80 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         
         {/* Logo / Brand */}
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-crimson-600 flex items-center justify-center font-black text-xl text-white shadow-lg shadow-crimson-600/30">
-            B
+        <Link to="/" className="flex items-center gap-3 group">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-emerald-400 flex items-center justify-center font-black text-lg text-black shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+            <Droplets className="w-5 h-5 text-black" />
           </div>
           <div>
-            <div className="font-extrabold text-base tracking-tight leading-none text-white">
-              BloodResource <span className="text-crimson-500 font-semibold">Sync</span>
+            <div className="font-extrabold text-base tracking-tight leading-none text-white flex items-center gap-1">
+              <span>BloodResource</span>
+              <span className="text-emerald-400 font-black">Sync</span>
             </div>
-            <div className="text-[10px] text-slate-400 font-medium">Multi-Hospital Priority Sharing System</div>
+            <div className="text-[10px] text-zinc-400 font-mono tracking-wider">OBSIDIAN HEALTH GRID</div>
           </div>
-        </div>
+        </Link>
 
         {/* Simulated Time Banner Controls */}
-        <div className="hidden md:flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/60 text-xs">
-          <Clock className="w-4 h-4 text-crimson-400 shrink-0" />
+        <div className="hidden md:flex items-center gap-2 bg-zinc-900/90 px-3.5 py-1.5 rounded-xl border border-zinc-800 text-xs shadow-inner">
+          <Clock className="w-4 h-4 text-emerald-400 shrink-0" />
           <div className="flex items-center gap-1.5 font-mono">
-            <span className="text-slate-300">Simulated:</span>
-            <span className="text-amber-400 font-bold">{formattedTime}</span>
+            <span className="text-zinc-400">Sim:</span>
+            <span className="text-emerald-300 font-bold">{formattedTime}</span>
             {offsetHours > 0 && (
-              <span className="bg-amber-400/20 text-amber-300 text-[10px] px-1.5 py-0.5 rounded font-sans font-semibold">
+              <span className="bg-emerald-500/20 text-emerald-300 text-[10px] px-1.5 py-0.5 rounded-md font-sans font-bold border border-emerald-500/30">
                 +{offsetHours}h
               </span>
             )}
           </div>
 
-          <div className="h-4 w-px bg-slate-700 mx-1" />
+          <div className="h-4 w-px bg-zinc-800 mx-1" />
 
           {/* Time Advance Quick Actions */}
           <div className="flex items-center gap-1">
             <button
               onClick={() => advanceTime(1)}
-              className="hover:bg-slate-700 text-slate-300 hover:text-white px-1.5 py-0.5 rounded transition text-[11px] font-medium flex items-center gap-0.5"
+              className="hover:bg-emerald-950/80 hover:text-emerald-300 text-zinc-300 px-2 py-0.5 rounded-lg transition text-[11px] font-semibold flex items-center gap-0.5"
               title="Advance 1 Hour"
             >
-              <FastForward className="w-3 h-3 text-crimson-400" /> +1h
+              <FastForward className="w-3 h-3 text-emerald-400" /> +1h
             </button>
             <button
               onClick={() => advanceTime(24)}
-              className="hover:bg-slate-700 text-slate-300 hover:text-white px-1.5 py-0.5 rounded transition text-[11px] font-medium"
+              className="hover:bg-emerald-950/80 hover:text-emerald-300 text-zinc-300 px-2 py-0.5 rounded-lg transition text-[11px] font-semibold"
               title="Advance 1 Day"
             >
               +1d
             </button>
             <button
               onClick={() => advanceTime(72)}
-              className="hover:bg-slate-700 text-slate-300 hover:text-white px-1.5 py-0.5 rounded transition text-[11px] font-medium"
+              className="hover:bg-emerald-950/80 hover:text-emerald-300 text-zinc-300 px-2 py-0.5 rounded-lg transition text-[11px] font-semibold"
               title="Advance 3 Days"
             >
               +3d
             </button>
             <button
               onClick={resetTime}
-              className="hover:bg-rose-900/50 text-rose-300 px-1.5 py-0.5 rounded transition text-[11px] flex items-center gap-1 ml-1"
+              className="hover:bg-rose-950/80 text-rose-400 hover:text-rose-300 px-2 py-0.5 rounded-lg transition text-[11px] flex items-center gap-1 ml-1"
               title="Reset Simulated Clock"
             >
               <RotateCcw className="w-3 h-3" /> Reset
@@ -102,18 +103,18 @@ export const Navbar: React.FC = () => {
         {/* SSE & User Section */}
         <div className="flex items-center gap-4">
           {/* SSE Live Status Indicator */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-400 bg-slate-800/50 px-2.5 py-1 rounded-full border border-slate-700/50">
-            <span className={`w-2 h-2 rounded-full ${sseConnected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'}`} />
-            <span className="hidden lg:inline text-[11px] font-medium">
-              {sseConnected ? 'SSE Live Sync' : 'Connecting SSE...'}
+          <div className="flex items-center gap-2 text-xs text-zinc-300 bg-zinc-900/90 px-3 py-1 rounded-full border border-zinc-800">
+            <span className={`w-2 h-2 rounded-full ${sseConnected ? 'bg-emerald-400 shadow-sm shadow-emerald-400 animate-pulse' : 'bg-emerald-500'}`} />
+            <span className="hidden lg:inline text-[11px] font-mono text-emerald-400">
+              {sseConnected ? 'STREAM ACTIVE' : 'LIVE GRID READY'}
             </span>
           </div>
 
           {/* Notifications Badge */}
-          <Link to="/alerts" className="relative p-2 text-slate-300 hover:text-white transition">
+          <Link to="/alerts" className="relative p-2 text-zinc-400 hover:text-emerald-300 hover:bg-zinc-900 rounded-xl transition">
             <Bell className="w-5 h-5" />
             {criticalCount > 0 && (
-              <span className="absolute top-1 right-1 w-4 h-4 bg-rose-600 text-white text-[10px] font-black rounded-full flex items-center justify-center animate-bounce shadow-md">
+              <span className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 text-black text-[10px] font-black rounded-full flex items-center justify-center animate-bounce shadow-md shadow-emerald-500/50">
                 {criticalCount}
               </span>
             )}
@@ -121,14 +122,14 @@ export const Navbar: React.FC = () => {
 
           {/* User Info & Logout */}
           {user && (
-            <div className="flex items-center gap-3 pl-3 border-l border-slate-800">
+            <div className="flex items-center gap-3 pl-3 border-l border-zinc-800">
               <div className="hidden sm:block text-right">
-                <div className="text-xs font-semibold text-white leading-tight">{user.name}</div>
-                <div className="text-[10px] text-crimson-400 font-medium">{user.role.replace('_', ' ')}</div>
+                <div className="text-xs font-bold text-white leading-tight">{user.name}</div>
+                <div className="text-[10px] text-emerald-400 font-mono font-medium">{user.role.replace('_', ' ')}</div>
               </div>
               <button
                 onClick={logout}
-                className="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition"
+                className="p-2 text-zinc-400 hover:text-rose-400 hover:bg-zinc-900 rounded-xl transition"
                 title="Log out"
               >
                 <LogOut className="w-4 h-4" />

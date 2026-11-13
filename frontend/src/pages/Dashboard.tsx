@@ -23,7 +23,6 @@ import {
   AlertTriangle,
   Clock,
   ChevronRight,
-  TrendingUp,
   Activity,
 } from 'lucide-react';
 
@@ -63,10 +62,15 @@ export const Dashboard: React.FC = () => {
   }, []);
 
   if (loading) {
-    return <div className="p-8 text-center text-slate-500 font-medium">Loading SQL Live Dashboard...</div>;
+    return (
+      <div className="p-8 text-center text-emerald-400 font-mono text-xs flex flex-col items-center justify-center gap-2">
+        <div className="w-6 h-6 border-2 border-emerald-500/20 border-t-emerald-400 rounded-full animate-spin" />
+        <span>Querying Live Obsidian Grid...</span>
+      </div>
+    );
   }
 
-  // Calculated SQL Statistics
+  // Calculated Statistics
   const availableUnitsTotal = inventory
     .filter(i => i.status === 'AVAILABLE')
     .reduce((acc, i) => acc + (i.available_quantity || 0), 0);
@@ -75,7 +79,6 @@ export const Dashboard: React.FC = () => {
   const activeTransfersCount = transfers.filter(t => t.status === 'IN_TRANSIT').length;
   const nearExpiryCount = inventory.filter(i => i.tier === 'NEAR_EXPIRY').length;
   const criticalExpiryCount = inventory.filter(i => i.tier === 'CRITICAL').length;
-  const expiredCount = inventory.filter(i => i.status === 'EXPIRED' || i.tier === 'EXPIRED').length;
   const unackCriticalAlerts = alerts.filter(a => a.severity === 'CRITICAL' && !a.is_acknowledged).length;
 
   // Chart Data Preparation
@@ -101,109 +104,118 @@ export const Dashboard: React.FC = () => {
     value,
   }));
 
-  const COLORS = ['#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#64748b'];
+  const COLORS = ['#10b981', '#06b6d4', '#3b82f6', '#f59e0b', '#8b5cf6', '#64748b'];
 
   return (
     <div className="space-y-6">
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Executive Live Dashboard</h1>
-          <p className="text-xs text-slate-500">
-            Real-time statistics queried from backend database engines and priority queues.
+          <h1 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            Executive Live Dashboard
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400" />
+          </h1>
+          <p className="text-xs text-zinc-400">
+            Real-time statistics queried from single-writer ledger engines and priority queues.
           </p>
         </div>
         <Link
           to="/engine-control"
-          className="bg-slate-900 hover:bg-slate-800 text-white font-extrabold px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-md transition self-start sm:self-auto"
+          className="bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black font-black px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition self-start sm:self-auto"
         >
-          <Activity className="w-4 h-4 text-crimson-400" /> Open Engine Control Center
+          <Activity className="w-4 h-4 text-black" /> Open Engine Control Center
         </Link>
       </div>
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        <Link to="/hospitals" className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 transition">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <Building2 className="w-5 h-5 text-slate-600" />
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Hospitals</span>
+        <Link to="/hospitals" className="bg-[#090d16] p-4 rounded-2xl border border-zinc-800 shadow-sm hover:border-emerald-500/40 transition group">
+          <div className="flex items-center justify-between text-zinc-400 mb-2">
+            <Building2 className="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold text-zinc-400 uppercase font-mono">Hospitals</span>
           </div>
-          <div className="text-2xl font-black text-slate-900">{hospitals.length}</div>
-          <div className="text-[10px] text-emerald-600 font-semibold mt-1">✓ Active Nodes</div>
+          <div className="text-2xl font-black text-white">{hospitals.length}</div>
+          <div className="text-[10px] text-emerald-400 font-semibold mt-1">✓ Active Nodes</div>
         </Link>
 
-        <Link to="/inventory" className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 transition">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <Droplets className="w-5 h-5 text-crimson-600" />
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Available Units</span>
+        <Link to="/inventory" className="bg-[#090d16] p-4 rounded-2xl border border-zinc-800 shadow-sm hover:border-emerald-500/40 transition group">
+          <div className="flex items-center justify-between text-zinc-400 mb-2">
+            <Droplets className="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold text-zinc-400 uppercase font-mono">Available Stock</span>
           </div>
-          <div className="text-2xl font-black text-slate-900">{availableUnitsTotal}</div>
-          <div className="text-[10px] text-slate-500 font-medium mt-1">Network Stock</div>
+          <div className="text-2xl font-black text-white">{availableUnitsTotal}</div>
+          <div className="text-[10px] text-zinc-400 font-medium mt-1">Total Units</div>
         </Link>
 
-        <Link to="/requests" className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 transition">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <FileSpreadsheet className="w-5 h-5 text-amber-500" />
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Pending Requests</span>
+        <Link to="/requests" className="bg-[#090d16] p-4 rounded-2xl border border-zinc-800 shadow-sm hover:border-emerald-500/40 transition group">
+          <div className="flex items-center justify-between text-zinc-400 mb-2">
+            <FileSpreadsheet className="w-5 h-5 text-teal-400 group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold text-zinc-400 uppercase font-mono">Pending</span>
           </div>
-          <div className="text-2xl font-black text-slate-900">{pendingCount}</div>
-          <div className="text-[10px] text-amber-600 font-semibold mt-1">In OS Queues</div>
+          <div className="text-2xl font-black text-white">{pendingCount}</div>
+          <div className="text-[10px] text-teal-400 font-semibold mt-1">In OS Queues</div>
         </Link>
 
-        <Link to="/transfers" className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 transition">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <ArrowLeftRight className="w-5 h-5 text-blue-600" />
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Active Transfers</span>
+        <Link to="/transfers" className="bg-[#090d16] p-4 rounded-2xl border border-zinc-800 shadow-sm hover:border-emerald-500/40 transition group">
+          <div className="flex items-center justify-between text-zinc-400 mb-2">
+            <ArrowLeftRight className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold text-zinc-400 uppercase font-mono">Transfers</span>
           </div>
-          <div className="text-2xl font-black text-slate-900">{activeTransfersCount}</div>
-          <div className="text-[10px] text-blue-600 font-semibold mt-1">In Transit</div>
+          <div className="text-2xl font-black text-white">{activeTransfersCount}</div>
+          <div className="text-[10px] text-cyan-400 font-semibold mt-1">In Transit</div>
         </Link>
 
-        <Link to="/expiry" className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 transition">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <Clock className="w-5 h-5 text-rose-600" />
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Critical Expiry</span>
+        <Link to="/expiry" className="bg-[#090d16] p-4 rounded-2xl border border-zinc-800 shadow-sm hover:border-rose-500/40 transition group">
+          <div className="flex items-center justify-between text-zinc-400 mb-2">
+            <Clock className="w-5 h-5 text-rose-400 group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold text-zinc-400 uppercase font-mono">Critical Expiry</span>
           </div>
-          <div className="text-2xl font-black text-rose-600">{criticalExpiryCount}</div>
-          <div className="text-[10px] text-slate-500 font-medium mt-1">{nearExpiryCount} Near Expiry</div>
+          <div className="text-2xl font-black text-rose-400">{criticalExpiryCount}</div>
+          <div className="text-[10px] text-zinc-400 font-medium mt-1">{nearExpiryCount} Near Expiry</div>
         </Link>
 
-        <Link to="/alerts" className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 transition">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <AlertTriangle className="w-5 h-5 text-rose-600 animate-pulse" />
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Critical Alerts</span>
+        <Link to="/alerts" className="bg-[#090d16] p-4 rounded-2xl border border-zinc-800 shadow-sm hover:border-amber-500/40 transition group">
+          <div className="flex items-center justify-between text-zinc-400 mb-2">
+            <AlertTriangle className="w-5 h-5 text-amber-400 animate-pulse" />
+            <span className="text-[10px] font-bold text-zinc-400 uppercase font-mono">Alerts</span>
           </div>
-          <div className="text-2xl font-black text-rose-600">{unackCriticalAlerts}</div>
-          <div className="text-[10px] text-rose-600 font-semibold mt-1">Requires Action</div>
+          <div className="text-2xl font-black text-amber-400">{unackCriticalAlerts}</div>
+          <div className="text-[10px] text-amber-400 font-semibold mt-1">Requires Action</div>
         </Link>
       </div>
 
       {/* Visual Analytics Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Bar Chart: Available Units by Blood Group */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div className="bg-[#090d16] p-5 rounded-2xl border border-zinc-800 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-extrabold text-slate-900">Available Stock by Blood Group</h2>
-            <span className="text-[10px] font-bold text-slate-400 uppercase font-mono">FEFO Surfaced</span>
+            <h2 className="text-sm font-extrabold text-white flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              Available Stock by Blood Group
+            </h2>
+            <span className="text-[10px] font-bold text-emerald-400 uppercase font-mono bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800/40">FEFO Surfaced</span>
           </div>
 
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartByGroup}>
-                <XAxis dataKey="group" stroke="#64748b" fontSize={11} />
-                <YAxis stroke="#64748b" fontSize={11} />
-                <Tooltip contentStyle={{ backgroundColor: '#0f172a', color: '#fff', borderRadius: '8px', fontSize: '12px' }} />
-                <Bar dataKey="units" fill="#e11d48" radius={[4, 4, 0, 0]} />
+                <XAxis dataKey="group" stroke="#71717a" fontSize={11} />
+                <YAxis stroke="#71717a" fontSize={11} />
+                <Tooltip contentStyle={{ backgroundColor: '#000000', border: '1px solid #27272a', color: '#10b981', borderRadius: '12px', fontSize: '12px' }} />
+                <Bar dataKey="units" fill="#10b981" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Pie Chart: Request Status Distribution */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div className="bg-[#090d16] p-5 rounded-2xl border border-zinc-800 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-extrabold text-slate-900">Request Lifecycle Status</h2>
-            <span className="text-[10px] font-bold text-slate-400 uppercase font-mono">State Machine</span>
+            <h2 className="text-sm font-extrabold text-white flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-teal-400" />
+              Request Lifecycle Status
+            </h2>
+            <span className="text-[10px] font-bold text-teal-400 uppercase font-mono bg-teal-950/80 px-2 py-0.5 rounded border border-teal-800/40">State Machine</span>
           </div>
 
           <div className="h-64">
@@ -214,8 +226,8 @@ export const Dashboard: React.FC = () => {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#0f172a', color: '#fff', borderRadius: '8px', fontSize: '12px' }} />
-                <Legend formatter={(value) => <span className="text-xs font-semibold text-slate-700">{value}</span>} />
+                <Tooltip contentStyle={{ backgroundColor: '#000000', border: '1px solid #27272a', color: '#10b981', borderRadius: '12px', fontSize: '12px' }} />
+                <Legend formatter={(value) => <span className="text-xs font-semibold text-zinc-300">{value}</span>} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -223,17 +235,20 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Live Recent Requests Table */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+      <div className="bg-[#090d16] p-5 rounded-2xl border border-zinc-800 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-extrabold text-slate-900">Recent Priority Requests</h2>
-          <Link to="/requests" className="text-xs text-crimson-600 font-bold hover:underline flex items-center gap-1">
+          <h2 className="text-sm font-extrabold text-white flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            Recent Priority Requests
+          </h2>
+          <Link to="/requests" className="text-xs text-emerald-400 font-bold hover:underline flex items-center gap-1">
             View All <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+            <thead className="bg-black/60 text-zinc-400 font-mono font-bold uppercase tracking-wider text-[10px] border-b border-zinc-800">
               <tr>
                 <th className="p-3">Request ID</th>
                 <th className="p-3">Hospital</th>
@@ -243,27 +258,27 @@ export const Dashboard: React.FC = () => {
                 <th className="p-3">Effective Score</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-medium">
+            <tbody className="divide-y divide-zinc-800/60 font-medium">
               {requests.slice(0, 5).map((req) => (
-                <tr key={req.id} className="hover:bg-slate-50 transition">
-                  <td className="p-3 font-mono font-bold text-slate-900">
-                    <Link to={`/requests/${req.id}`} className="hover:underline text-crimson-600">
+                <tr key={req.id} className="hover:bg-zinc-900/50 transition">
+                  <td className="p-3 font-mono font-bold text-white">
+                    <Link to={`/requests/${req.id}`} className="hover:underline text-emerald-400">
                       {req.id}
                     </Link>
                   </td>
-                  <td className="p-3">{req.requesting_hospital_name}</td>
+                  <td className="p-3 text-zinc-300">{req.requesting_hospital_name}</td>
                   <td className="p-3">
                     <PriorityBadge priority={req.priority} />
                   </td>
-                  <td className="p-3 font-bold">
+                  <td className="p-3 font-bold text-white">
                     {req.items[0]?.blood_group} {req.items[0]?.component} ({req.items[0]?.quantity} units)
                   </td>
                   <td className="p-3">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-800">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-zinc-900 text-emerald-300 border border-zinc-800">
                       {req.status}
                     </span>
                   </td>
-                  <td className="p-3 font-mono font-bold text-slate-900">{req.effective_score || 0}</td>
+                  <td className="p-3 font-mono font-bold text-emerald-400">{req.effective_score || 0}</td>
                 </tr>
               ))}
             </tbody>

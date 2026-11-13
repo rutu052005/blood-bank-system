@@ -37,10 +37,10 @@ export const Sidebar: React.FC = () => {
   ];
 
   return (
-    <aside className="w-64 bg-slate-900 text-slate-300 border-r border-slate-800 flex flex-col shrink-0 min-h-[calc(100vh-4rem)]">
+    <aside className="w-64 bg-black/95 text-zinc-300 border-r border-zinc-800/80 flex flex-col shrink-0 min-h-[calc(100vh-4rem)]">
       <div className="p-4 space-y-1">
-        <div className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-          System Modules & Engines
+        <div className="px-3 py-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-mono">
+          SYSTEM ENGINES & MODULES
         </div>
 
         {links.map((link) => {
@@ -54,21 +54,21 @@ export const Sidebar: React.FC = () => {
               key={link.to}
               to={link.to}
               className={({ isActive }) =>
-                `flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition ${
+                `flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                   isActive
-                    ? 'bg-crimson-600 text-white font-semibold shadow-md shadow-crimson-600/20'
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-black font-black shadow-lg shadow-emerald-500/25'
                     : link.highlight
-                    ? 'bg-slate-800/80 text-white hover:bg-slate-800 border border-crimson-500/30'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    ? 'bg-emerald-950/20 text-emerald-300 hover:bg-emerald-950/40 border border-emerald-500/30'
+                    : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'
                 }`
               }
             >
               <div className="flex items-center gap-2.5">
-                <Icon className={`w-4 h-4 ${link.highlight ? 'text-crimson-400' : ''}`} />
+                <Icon className={`w-4 h-4 ${link.highlight ? 'text-emerald-400' : ''}`} />
                 <span>{link.label}</span>
               </div>
               {link.badge && (
-                <span className="bg-crimson-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">
+                <span className="bg-black/60 text-emerald-300 border border-emerald-500/40 text-[9px] font-mono font-black px-1.5 py-0.5 rounded uppercase tracking-wider">
                   {link.badge}
                 </span>
               )}
@@ -77,14 +77,14 @@ export const Sidebar: React.FC = () => {
         })}
       </div>
 
-      <div className="mt-auto p-4 border-t border-slate-800/80 bg-slate-950/40">
-        <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-800">
-          <div className="text-[11px] font-bold text-slate-300 mb-1 flex items-center justify-between">
-            <span>Supabase / DB Status</span>
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+      <div className="mt-auto p-4 border-t border-zinc-900 bg-zinc-950/60">
+        <div className="bg-black rounded-xl p-3 border border-zinc-800/80 shadow-sm">
+          <div className="text-[11px] font-bold text-zinc-200 mb-1 flex items-center justify-between font-mono">
+            <span>DATABASE STORE</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400"></span>
           </div>
-          <p className="text-[10px] text-slate-400 leading-tight">
-            Ready for Supabase PostgreSQL & Memory Transaction DB Engine.
+          <p className="text-[10px] text-zinc-400 leading-tight">
+            High-Performance In-Memory DB & Supabase SQL Engine Active.
           </p>
         </div>
       </div>

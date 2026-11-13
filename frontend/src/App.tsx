@@ -28,7 +28,12 @@ const ProtectedLayout: React.FC = () => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center font-bold">Initializing System...</div>;
+    return (
+      <div className="min-h-screen bg-[#030712] text-emerald-400 flex flex-col items-center justify-center font-mono gap-3">
+        <div className="w-8 h-8 border-2 border-emerald-500/20 border-t-emerald-400 rounded-full animate-spin" />
+        <span className="text-xs tracking-wider uppercase">Initializing Obsidian Grid...</span>
+      </div>
+    );
   }
 
   if (!user) {
@@ -37,12 +42,12 @@ const ProtectedLayout: React.FC = () => {
 
   return (
     <SimClockProvider>
-      <div className="min-h-screen bg-slate-50 flex flex-col">
+      <div className="min-h-screen bg-[#030712] text-slate-100 flex flex-col selection:bg-emerald-500 selection:text-black">
         <PersistentBanner />
         <Navbar />
         <div className="flex-1 flex overflow-hidden">
           <Sidebar />
-          <main className="flex-1 p-6 overflow-y-auto max-w-7xl mx-auto w-full">
+          <main className="flex-1 p-6 overflow-y-auto max-w-7xl mx-auto w-full bg-[#030712]">
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/engine-control" element={<EngineControlCenter />} />
