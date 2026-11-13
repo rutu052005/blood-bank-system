@@ -18,19 +18,19 @@ export const ExpiryPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <Clock className="w-6 h-6 text-crimson-600" /> Expiry Management & FEFO Queue
+          <h1 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <Clock className="w-6 h-6 text-emerald-400" /> Expiry & Shelf-Life Management
           </h1>
-          <p className="text-xs text-slate-500">
-            Event-driven Min-Heap order (nearest expiry surfaced first). Expiry changes digital status only.
+          <p className="text-xs text-zinc-400">
+            Automated freshness tracking prioritizing units nearing expiration for immediate scheduled use.
           </p>
         </div>
 
         <button
           onClick={() => api.triggerExpiryTick().then(fetchFEFO)}
-          className="bg-slate-900 text-white font-extrabold px-3.5 py-2 rounded-xl text-xs hover:bg-slate-800 transition"
+          className="bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold px-3.5 py-2 rounded-xl text-xs transition"
         >
-          Force Min-Heap Tick
+          Check Expiry Status
         </button>
       </div>
 

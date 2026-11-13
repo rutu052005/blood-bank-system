@@ -20,10 +20,10 @@ export const AuditLogsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <ShieldCheck className="w-6 h-6 text-crimson-600" /> Immutable Security Audit Ledger
+          <h1 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <ShieldCheck className="w-6 h-6 text-emerald-400" /> Compliance & Security Audit Logs
           </h1>
-          <p className="text-xs text-slate-500">Every inventory mutation and engine decision writes a ledger entry.</p>
+          <p className="text-xs text-zinc-400">Verifiable tamper-evident record of all hospital requests, dispatches, and inventory updates.</p>
         </div>
       </div>
 

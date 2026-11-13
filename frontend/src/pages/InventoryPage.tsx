@@ -52,11 +52,11 @@ export const InventoryPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <Droplets className="w-6 h-6 text-crimson-600" /> Inventory & Stock Ledger
+          <h1 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <Droplets className="w-6 h-6 text-emerald-400" /> Live Inventory & Stock Ledger
           </h1>
-          <p className="text-xs text-slate-500">
-            Single-Writer Inventory Sync Engine source of truth. FEFO ordered surfacing.
+          <p className="text-xs text-zinc-400">
+            Real-time blood reserves across all partner hospitals with automated shelf-life tracking.
           </p>
         </div>
 

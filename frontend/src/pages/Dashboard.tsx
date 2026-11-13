@@ -116,14 +116,14 @@ export const Dashboard: React.FC = () => {
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400" />
           </h1>
           <p className="text-xs text-zinc-400">
-            Real-time statistics queried from single-writer ledger engines and priority queues.
+            Real-time network statistics and live emergency resource coordination.
           </p>
         </div>
         <Link
           to="/engine-control"
           className="bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black font-black px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition self-start sm:self-auto"
         >
-          <Activity className="w-4 h-4 text-black" /> Open Engine Control Center
+          <Activity className="w-4 h-4 text-black" /> Open Operations Center
         </Link>
       </div>
 
@@ -153,7 +153,7 @@ export const Dashboard: React.FC = () => {
             <span className="text-[10px] font-bold text-zinc-400 uppercase font-mono">Pending</span>
           </div>
           <div className="text-2xl font-black text-white">{pendingCount}</div>
-          <div className="text-[10px] text-teal-400 font-semibold mt-1">In OS Queues</div>
+          <div className="text-[10px] text-teal-400 font-semibold mt-1">Awaiting Dispatch</div>
         </Link>
 
         <Link to="/transfers" className="bg-[#090d16] p-4 rounded-2xl border border-zinc-800 shadow-sm hover:border-emerald-500/40 transition group">

@@ -13,10 +13,10 @@ export const HospitalsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-          <Building2 className="w-6 h-6 text-crimson-600" /> Participating Hospital Nodes
+        <h1 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+          <Building2 className="w-6 h-6 text-emerald-400" /> Partner Hospital Facilities
         </h1>
-        <p className="text-xs text-slate-500">Registered blood bank network nodes.</p>
+        <p className="text-xs text-zinc-400">Accredited regional healthcare centers collaborating on emergency blood resources.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

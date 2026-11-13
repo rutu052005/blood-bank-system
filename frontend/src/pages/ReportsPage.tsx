@@ -25,10 +25,10 @@ export const ReportsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-crimson-600" /> System Reports & Export
+          <h1 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <BarChart3 className="w-6 h-6 text-emerald-400" /> Operational Analytics & Reports
           </h1>
-          <p className="text-xs text-slate-500">Query SQL report statistics across all hospital nodes.</p>
+          <p className="text-xs text-zinc-400">Comprehensive inventory analytics and supply summaries across all hospital facilities.</p>
         </div>
 
         <button

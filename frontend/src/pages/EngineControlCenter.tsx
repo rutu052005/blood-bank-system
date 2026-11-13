@@ -114,16 +114,16 @@ export const EngineControlCenter: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="bg-crimson-600 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest">
-                Academic Showcase
+              <span className="bg-emerald-600 text-black text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest">
+                SYSTEM OPERATIONS
               </span>
-              <span className="text-xs text-slate-400 font-mono">Core Engine Architecture</span>
+              <span className="text-xs text-zinc-400 font-mono">Central Dispatch & Routing Grid</span>
             </div>
             <h1 className="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2">
-              <Cpu className="w-7 h-7 text-crimson-500" /> Engine Control Center
+              <Cpu className="w-7 h-7 text-emerald-400" /> Operations Control Center
             </h1>
-            <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-              Live visualization of the 4 priority-driven engines: DBMS Inventory Sync, DSA Matching Engine, DSA/OS Expiry Engine, and OS Multilevel Priority Request Scheduler.
+            <p className="text-xs text-zinc-400 mt-1 max-w-2xl">
+              Real-time visualization of multi-hospital operations: Live Inventory Synchronization, Smart Transit Routing, Shelf-Life Monitoring, and Priority Emergency Queuing.
             </p>
           </div>
 
@@ -192,15 +192,15 @@ export const EngineControlCenter: React.FC = () => {
       </div>
 
       {/* TABS NAVIGATION */}
-      <div className="flex items-center gap-2 border-b border-slate-200 overflow-x-auto pb-1">
+      <div className="flex items-center gap-2 border-b border-zinc-800 overflow-x-auto pb-1">
         {[
-          { id: 'scheduler', label: 'Multilevel Priority Queue (OS)' },
-          { id: 'matching', label: 'Matching Explainer (Dijkstra)' },
-          { id: 'expiry', label: 'Expiry Timeline (FEFO Heap)' },
-          { id: 'banker', label: "Banker's Avoidance Matrix" },
-          { id: 'events', label: 'Event Queue (Producer-Consumer)' },
-          { id: 'scenarios', label: 'Academic Test Scenarios (S1-S6)' },
-          { id: 'concept-map', label: 'CS Concept Map' },
+          { id: 'scheduler', label: 'Priority Triage Queues' },
+          { id: 'matching', label: 'Smart Route & Match Explainer' },
+          { id: 'expiry', label: 'Freshness & Shelf-Life Tracker' },
+          { id: 'banker', label: 'Reserve Safety Matrix' },
+          { id: 'events', label: 'Real-Time System Activity' },
+          { id: 'scenarios', label: 'Interactive Workflow Tests' },
+          { id: 'concept-map', label: 'System Architecture Overview' },
         ].map((tab) => (
           <button
             key={tab.id}

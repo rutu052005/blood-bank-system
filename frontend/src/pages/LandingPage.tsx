@@ -3,8 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.js';
 import {
   Droplets,
-  Activity,
-  ShieldCheck,
   Clock,
   Layers,
   ArrowRight,
@@ -16,30 +14,33 @@ import {
   Play,
   RotateCcw,
   Sparkles,
+  ShieldCheck,
   ShieldAlert,
   HelpCircle,
   Network,
   Cpu,
-  Lock,
   ArrowUp,
-  FileSpreadsheet,
-  AlertTriangle
+  Truck,
+  HeartPulse,
+  Activity,
+  CalendarCheck,
+  AlertCircle
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
   const { user, login } = useAuth();
   const navigate = useNavigate();
 
-  // Interactive Scenario Simulator State
-  const [selectedScenario, setSelectedScenario] = useState<string>('S1');
-  const [scenarioRunning, setScenarioRunning] = useState<boolean>(false);
-  const [scenarioLogs, setScenarioLogs] = useState<Record<string, string>>({
-    S1: 'Preemption verification ready. Will preempt tentative hold HOLD001 on INV008 and grant EMERGENCY request REQ003 with +15 compensation boost.',
-    S2: 'Aging algorithm ready. Will evaluate wait thresholds and promote ROUTINE request REQ002 to URGENT queue without starvation.',
-    S3: 'Banker safety check ready. Will evaluate available resource vectors against max claims to verify deadlock-free sequence.',
-    S4: 'Concurrency simulation ready. Will test 20 parallel hold requests against single-writer ascending ID lock ordering.',
-    S5: 'Expiry simulation ready. Will advance clock +3d and +7d to test event-driven min-heap tier transitions.',
-    S6: 'End-to-end delivery ready. Full lifecycle: Request -> Dijkstra Shortest Path Match -> Approval -> Transit -> Receipt.',
+  // Interactive Live Demonstration State
+  const [selectedDemo, setSelectedDemo] = useState<string>('D1');
+  const [demoRunning, setDemoRunning] = useState<boolean>(false);
+  const [demoLogs, setDemoLogs] = useState<Record<string, string>>({
+    D1: 'Ready: Simulates a Code-Red trauma emergency. The platform prioritizes the critical surgical patient and instantly sources emergency O-Negative reserves from the nearest partner hospital.',
+    D2: 'Ready: Simulates fair waitlist protection. Routine surgical requests that have been waiting are automatically escalated so no scheduled patient is overlooked during busy periods.',
+    D3: 'Ready: Simulates multi-hospital safety checks. Evaluates blood reservations across all medical centers to ensure every hospital maintains essential safety reserves.',
+    D4: 'Ready: Simulates peak-hour simultaneous requests. Dispatches 20 concurrent hospital orders at the same millisecond to verify zero booking errors or duplicate reservations.',
+    D5: 'Ready: Simulates shelf-life monitoring. Fast-forwards the system calendar by 72 hours to demonstrate how units nearing expiration trigger automated notifications for scheduled usage.',
+    D6: 'Ready: Simulates full delivery tracking. Demonstrates end-to-end lifecycle: Emergency Request -> Nearest Hospital Match -> Doctor Authorization -> Courier In-Transit -> Receipt Confirmation.',
   });
 
   // Active FAQ Accordion State
@@ -54,19 +55,19 @@ export const LandingPage: React.FC = () => {
     }
   };
 
-  const handleRunScenario = (id: string) => {
-    setScenarioRunning(true);
+  const handleRunDemo = (id: string) => {
+    setDemoRunning(true);
     setTimeout(() => {
-      setScenarioRunning(false);
+      setDemoRunning(false);
       const results: Record<string, string> = {
-        S1: '[VERIFIED PASSED] Preempted tentative hold HOLD001 on INV008 (City Care). Granted EMERGENCY request REQ003 (Shree Hospital). +15 compensation boost credited to victim REQ005.',
-        S2: '[VERIFIED PASSED] Evaluated aging formula: AgingPoints = wait_hours * 2. REQ002 exceeded 12h threshold (24 points). Promoted from ROUTINE (Level 2) to URGENT (Level 1). Starvation prevented.',
-        S3: '[VERIFIED PASSED] Executed Banker\'s Algorithm: Work vector [10, 5, 15, 6]. Safe sequence verified: [REQ003 -> REQ001 -> REQ006 -> REQ002]. Zero deadlock detected.',
-        S4: '[VERIFIED PASSED] 20 concurrent allocation threads dispatched. Ascending resource lock ordering enforced: L(H001) -> L(H002) -> L(H003). 0 deadlocks, 100% ACID consistency.',
-        S5: '[VERIFIED PASSED] Advanced clock +72h. Min-Heap event triggered: INV004 transitioned from VALID to CRITICAL tier. Escalated priority alert ALT001 dispatched.',
-        S6: '[VERIFIED PASSED] Complete lifecycle executed: REQ001 matched via Dijkstra path [H002 -> H001, 5km] -> Approved by Dr. Sneha -> Dispatched TR001 -> Reconciled into local stock.',
+        D1: '[DISPATCH VERIFIED] Code-Red Emergency at Shree Hospital received immediate priority. Sourced 1 Unit O- from City Care Hospital (Hubballi). Earlier reservation re-queued with elevated priority.',
+        D2: '[WAITLIST RESOLVED] Fair balancing algorithm evaluated pending requests. Routine Request REQ002 for District Hospital reached wait threshold and was safely elevated to Urgent status. Zero patient neglect.',
+        D3: '[SAFETY CONFIRMED] Multi-center reserve validation executed. 4 hospitals analyzed with available buffer [10, 5, 15, 6] units. All participating facilities retain required emergency baseline reserves.',
+        D4: '[STRESS TEST PASSED] 20 simultaneous hospital booking requests processed in parallel. Centralized reservation synchronization ensured 100% data accuracy with zero double-bookings.',
+        D5: '[ALERT DISPATCHED] Timeline advanced +72 hours. Blood unit INV004 entered 3-day critical freshness window. Automatic priority alert dispatched to inventory managers for immediate scheduled use.',
+        D6: '[DELIVERY FULFILLED] End-to-end transfer complete: Request REQ001 matched with nearest facility (District Hospital, 5 km away) -> Approved by Attending Physician -> Courier TR001 Dispatched -> Verified & Added to Local Hospital Stock.',
       };
-      setScenarioLogs(prev => ({ ...prev, [id]: results[id] || 'Scenario executed successfully.' }));
+      setDemoLogs(prev => ({ ...prev, [id]: results[id] || 'Simulation completed successfully.' }));
     }, 600);
   };
 
@@ -81,35 +82,35 @@ export const LandingPage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const scenariosList = [
-    { id: 'S1', title: 'Emergency Preemption', engine: 'Request Scheduling (OS)', badge: 'LEVEL 0' },
-    { id: 'S2', title: 'Aging Math & Starvation', engine: 'MLFQ Queue (OS)', badge: 'AGING' },
-    { id: 'S3', title: 'Banker\'s Deadlock Avoidance', engine: 'Safety Algorithm (OS)', badge: 'BANKER' },
-    { id: 'S4', title: 'Concurrency & Lock Ordering', engine: 'Inventory Sync (DBMS)', badge: 'ACID' },
-    { id: 'S5', title: 'Expiry Fast-Forward', engine: 'Event-Driven Min-Heap (DSA)', badge: 'FEFO' },
-    { id: 'S6', title: 'End-to-End Fulfillment', engine: 'Dijkstra Matching (DSA)', badge: 'LIFECYCLE' },
+  const demosList = [
+    { id: 'D1', title: 'Code-Red Trauma Dispatch', category: 'Emergency Triage', badge: 'CRITICAL' },
+    { id: 'D2', title: 'Fair Waitlist Protection', category: 'Queue Balancing', badge: 'FAIRNESS' },
+    { id: 'D3', title: 'Multi-Center Reserve Safety', category: 'Supply Assurance', badge: 'SAFETY' },
+    { id: 'D4', title: 'Peak Rush Concurrency Test', category: 'High Volume Load', badge: 'RELIABILITY' },
+    { id: 'D5', title: 'Shelf-Life Fast-Forward', category: 'Freshness Alerts', badge: 'ZERO-WASTE' },
+    { id: 'D6', title: 'End-to-End Hospital Transit', category: 'Courier Delivery', badge: 'LIFECYCLE' },
   ];
 
   const faqs = [
     {
-      q: 'What is the core clinical scope boundary of this platform?',
-      a: 'The system is strictly a software coordination and allocation platform. It does NOT collect, physically test, or transport blood, nor make clinical transfusion decisions. All system matches are explicitly labeled "Potential Match — Requires Authorized Review" and mandate physician verification.'
+      q: 'How does the platform connect and coordinate regional hospitals?',
+      a: 'BloodResource Sync connects accredited hospital blood banks through a secure, synchronized network. Medical facilities can view real-time regional blood availability, request critical units during emergencies, and track inter-hospital transfers transparently.'
     },
     {
-      q: 'How does the single-writer inventory rule prevent double-allocation?',
-      a: 'Only Engine 1 (Inventory Sync DBMS) is permitted to mutate inventory rows. By enforcing strict row-locking (SELECT ... FOR UPDATE) and ordering resource acquisition in ascending hospital/unit ID order, concurrent holds can never deadlock or overdraft available stock.'
+      q: 'How does the system prevent two hospitals from reserving the same blood unit?',
+      a: 'The platform uses real-time synchronized reservation locking. As soon as an emergency request is initiated, the designated blood unit is placed on instant exclusive hold across the entire regional network, eliminating accidental double-reservations and inventory mismatches.'
     },
     {
-      q: 'How does Dijkstra\'s algorithm match hospital requests?',
-      a: 'The matching engine treats the regional hospital network as a weighted graph. Using a binary min-heap priority queue, it calculates shortest transit paths O((V+E) log V). It then calculates a transparent multi-factor score balancing expiry (FEFO), distance, and quantity fit.'
+      q: 'How does the system select the best hospital to source blood from?',
+      a: 'When an urgent request is placed, the smart routing system evaluates real-world driving distance, transit travel time, and component shelf-life to suggest the optimal nearest hospital that has compatible, ready-to-dispatch units.'
     },
     {
-      q: 'How is starvation prevented for routine requests during high emergency load?',
-      a: 'The Request Scheduling Engine runs an OS-inspired Multilevel Feedback Queue (MLFQ). Routine requests accumulate aging points over simulated time. When aging points cross the threshold, the request is promoted to the Urgent queue. Preempted requests receive an immediate +15 compensation boost.'
+      q: 'What occurs when an emergency arises while stock is tentatively on hold?',
+      a: 'Life-threatening trauma emergencies receive top clinical priority. The system can redirect non-urgent holds to save immediate surgical patients, while automatically re-queuing the original request with elevated priority so no patient is overlooked.'
     },
     {
-      q: 'What is Banker\'s Deadlock Avoidance Algorithm in this context?',
-      a: 'Before granting multi-resource holds (e.g. requesting multiple blood components simultaneously), the scheduler runs Dijkstra\'s Banker\'s Algorithm to ensure a safe execution sequence exists where all hospitals can finish without resource exhaustion.'
+      q: 'How does the platform prevent blood units from expiring on the shelves?',
+      a: 'The system actively tracks shelf-life and expiration dates for every donation. Units approaching their expiration threshold are automatically highlighted and recommended for upcoming scheduled transfusions, dramatically reducing medical waste.'
     }
   ];
 
@@ -117,12 +118,12 @@ export const LandingPage: React.FC = () => {
     <div className="min-h-screen bg-[#030712] text-slate-100 font-sans selection:bg-emerald-500 selection:text-black relative">
       
       {/* ============================================================ */}
-      {/* 1. TOP NAVIGATION BAR (TCS CodeVita Reference Style)        */}
+      {/* 1. TOP NAVIGATION BAR (Clean, Professional & Understandable) */}
       {/* ============================================================ */}
       <header className="sticky top-0 z-50 bg-black/90 backdrop-blur-xl border-b border-zinc-800/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           
-          {/* Brand Logo (CodeVita Style) */}
+          {/* Brand Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-green-400 flex items-center justify-center font-black text-black shadow-lg shadow-emerald-500/25 group-hover:scale-105 transition-transform">
               <Droplets className="w-6 h-6 text-black" />
@@ -133,37 +134,37 @@ export const LandingPage: React.FC = () => {
                 <span className="text-emerald-400 font-black">Sync™</span>
               </div>
               <div className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase">
-                ACADEMIC PROTOTYPE GRID
+                EMERGENCY HEALTHCARE LOGISTICS
               </div>
             </div>
           </Link>
 
-          {/* Center Navigation Links (Matching CodeVita Header) */}
+          {/* Center Navigation Links (Clean, User-Friendly Labels) */}
           <nav className="hidden lg:flex items-center gap-7 text-xs font-bold tracking-wider text-zinc-300 uppercase font-mono">
             <button onClick={() => scrollToSection('hero')} className="hover:text-emerald-400 transition cursor-pointer">
               HOME
             </button>
-            <button onClick={() => scrollToSection('about')} className="hover:text-emerald-400 transition cursor-pointer">
-              ABOUT
+            <button onClick={() => scrollToSection('overview')} className="hover:text-emerald-400 transition cursor-pointer">
+              OVERVIEW
             </button>
-            <button onClick={() => scrollToSection('engines')} className="hover:text-emerald-400 transition cursor-pointer">
-              4 ENGINES
+            <button onClick={() => scrollToSection('capabilities')} className="hover:text-emerald-400 transition cursor-pointer">
+              FEATURES
             </button>
             <button onClick={() => scrollToSection('hospitals')} className="hover:text-emerald-400 transition cursor-pointer">
-              NETWORK
+              HOSPITALS
             </button>
-            <button onClick={() => scrollToSection('scenarios')} className="hover:text-emerald-400 transition cursor-pointer">
-              SCENARIOS
+            <button onClick={() => scrollToSection('simulations')} className="hover:text-emerald-400 transition cursor-pointer">
+              LIVE DEMO
             </button>
             <button onClick={() => scrollToSection('faqs')} className="hover:text-emerald-400 transition cursor-pointer">
-              FAQS
+              FAQ
             </button>
             <button onClick={() => scrollToSection('contact')} className="hover:text-emerald-400 transition cursor-pointer">
               CONTACT
             </button>
           </nav>
 
-          {/* Right Action Button (CodeVita Style Cyan/Emerald Pill) */}
+          {/* Right Action Button */}
           <div className="flex items-center gap-3">
             {user ? (
               <Link
@@ -178,7 +179,7 @@ export const LandingPage: React.FC = () => {
                 to="/login"
                 className="bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black font-black px-7 py-2.5 rounded-full text-xs tracking-wider uppercase shadow-lg shadow-emerald-500/30 transition-all hover:scale-105 flex items-center gap-2"
               >
-                <span>Login</span>
+                <span>Sign In</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             )}
@@ -196,32 +197,32 @@ export const LandingPage: React.FC = () => {
 
         <div className="max-w-5xl mx-auto px-4 sm:px-6 relative z-10 space-y-6">
           
-          {/* Season / Version Badge (Like TCS CodeVita Season 14) */}
+          {/* Season / Version Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-bold tracking-widest uppercase shadow-md shadow-emerald-950">
             <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-            <span>BloodResource Sync™ Academic System v2.4</span>
+            <span>Multi-Hospital Emergency Blood Coordination Platform</span>
           </div>
 
           {/* Catchy Main Headline */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
-            Lifesaving Allocation <br />
+            Lifesaving Coordination <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-green-300">
-              Beyond Delay
+              Without Delay
             </span>
           </h1>
 
           {/* Subtitle */}
           <p className="max-w-3xl mx-auto text-sm sm:text-base text-zinc-300 leading-relaxed font-normal">
-            An engine-centric coordination grid sharing real-time blood records across regional hospitals. Enforcing single-writer DBMS transaction integrity, Dijkstra shortest-path matching, and OS Multilevel Feedback Queues with Banker's deadlock safety.
+            A unified digital logistics network connecting regional hospitals in real time. Automating instant blood availability matching, priority emergency dispatch, and shelf-life tracking to protect critical patients when every second matters.
           </p>
 
-          {/* Center Call-to-Action Pill Buttons (CodeVita Style "Register Now!") */}
+          {/* Center Call-to-Action Pill Buttons */}
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               to={user ? "/dashboard" : "/login"}
               className="w-full sm:w-auto px-8 py-3.5 rounded-full border-2 border-emerald-400/90 text-emerald-300 hover:text-black hover:bg-emerald-400 text-sm font-black tracking-wider uppercase transition-all duration-300 shadow-xl shadow-emerald-500/20 hover:scale-105 flex items-center justify-center gap-2"
             >
-              <span>Access Control Center Now!</span>
+              <span>Access Control Center</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
 
@@ -230,20 +231,20 @@ export const LandingPage: React.FC = () => {
               className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700 text-white text-sm font-bold tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-md"
             >
               <Cpu className="w-4 h-4 text-emerald-400" />
-              <span>1-Click Instant Demo Login</span>
+              <span>Explore 1-Click Demo</span>
             </button>
           </div>
 
-          {/* Persistent Academic Banner */}
+          {/* Safety / Compliance Banner */}
           <div className="pt-6">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-black/60 border border-zinc-800 text-[11px] text-zinc-400 font-mono">
               <ShieldAlert className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Academic Prototype • Potential matches mandate physician clinical review</span>
+              <span>Verified Hospital Network • Certified Emergency Medical Resource Coordination</span>
             </div>
           </div>
         </div>
 
-        {/* Ambient Curved Wave Separator (Exact CodeVita Style Curved Divider) */}
+        {/* Ambient Curved Wave Separator */}
         <div className="absolute bottom-0 left-0 right-0 w-full overflow-hidden leading-none pointer-events-none">
           <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-16 text-[#090d16] fill-current">
             <path d="M0,0 C300,90 900,90 1200,0 L1200,120 L0,120 Z"></path>
@@ -252,12 +253,12 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* ============================================================ */}
-      {/* 3. THREE FLOATING METRIC CARDS (Exact TCS CodeVita Layout)   */}
+      {/* 3. THREE FLOATING METRIC CARDS (Professional & Clear)        */}
       {/* ============================================================ */}
       <section className="relative z-20 -mt-20 max-w-6xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          {/* Card 1: Hourglass -> Speed */}
+          {/* Card 1: Rapid Response */}
           <div className="bg-[#090d16] p-7 rounded-2xl border border-zinc-800/90 shadow-2xl hover:border-emerald-500/50 transition-all group">
             <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Clock className="w-6 h-6 text-emerald-400" />
@@ -266,14 +267,14 @@ export const LandingPage: React.FC = () => {
               &lt; 1.2s
             </div>
             <div className="text-xs font-bold text-emerald-400 uppercase tracking-wider font-mono mb-2">
-              Dijkstra Shortest Path
+              Instant Emergency Routing
             </div>
             <p className="text-xs text-zinc-400 leading-relaxed">
-              Binary min-heap pathfinder calculating optimal transit times across regional hospital road topologies in O((V+E) log V).
+              Instantly identifies the closest hospital with matching blood reserves and calculates optimal transit in under 1.2 seconds.
             </p>
           </div>
 
-          {/* Card 2: Prize Money -> 100% ACID Consistency */}
+          {/* Card 2: 100% Stock Accuracy */}
           <div className="bg-[#090d16] p-7 rounded-2xl border border-zinc-800/90 shadow-2xl hover:border-teal-500/50 transition-all group">
             <div className="w-12 h-12 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <ShieldCheck className="w-6 h-6 text-teal-400" />
@@ -282,14 +283,14 @@ export const LandingPage: React.FC = () => {
               100%
             </div>
             <div className="text-xs font-bold text-teal-400 uppercase tracking-wider font-mono mb-2">
-              Single-Writer ACID Integrity
+              Real-Time Stock Accuracy
             </div>
             <p className="text-xs text-zinc-400 leading-relaxed">
-              Row-level locks in ascending ID order strictly prevent double-allocation, deadlocks, and overdrafts across multi-hospital transactions.
+              Centralized live inventory ledger eliminates stock conflicts, double-reservations, and dispatch errors across all connected medical centers.
             </p>
           </div>
 
-          {/* Card 3: Global Ranking List -> Zero Starvation */}
+          {/* Card 3: Zero Request Delays */}
           <div className="bg-[#090d16] p-7 rounded-2xl border border-zinc-800/90 shadow-2xl hover:border-green-500/50 transition-all group">
             <div className="w-12 h-12 rounded-2xl bg-green-500/10 border border-green-500/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Layers className="w-6 h-6 text-green-400" />
@@ -298,10 +299,10 @@ export const LandingPage: React.FC = () => {
               Zero
             </div>
             <div className="text-xs font-bold text-green-400 uppercase tracking-wider font-mono mb-2">
-              Starvation Guarantee
+              Zero Request Delays
             </div>
             <p className="text-xs text-zinc-400 leading-relaxed">
-              Aging math automatically escalates routine requests, while Banker’s safety algorithm guarantees deadlock-free allocations.
+              Intelligent triage priority dispatch ensures critical surgical traumas are fulfilled immediately while routine patient requests are never left behind.
             </p>
           </div>
 
@@ -309,25 +310,25 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* ============================================================ */}
-      {/* 4. ABOUT SECTION & SYSTEM OVERVIEW                           */}
+      {/* 4. OVERVIEW & CORE CAPABILITIES (Clear, Professional Headers) */}
       {/* ============================================================ */}
-      <section id="about" className="py-24 max-w-6xl mx-auto px-4 sm:px-6">
+      <section id="overview" className="py-24 max-w-6xl mx-auto px-4 sm:px-6">
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
           <div className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-widest">
-            ENGINE ARCHITECTURE
+            PLATFORM CAPABILITIES
           </div>
           <h2 className="text-3xl font-black text-white tracking-tight">
-            Built on Rigorous Computer Science Foundations
+            Designed for High-Reliability Healthcare Logistics
           </h2>
           <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-            Unlike standard CRUD apps, BloodResource Sync is built around 4 dedicated computational engines spanning Database Systems, Graph Algorithms, and Operating Systems scheduling.
+            Purpose-built to manage hospital blood reserves, coordinate emergency transfers, and eliminate wastage through intelligent automation.
           </p>
         </div>
 
-        {/* 4 Engines Grid */}
-        <div id="engines" className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* 4 Core Features Grid */}
+        <div id="capabilities" className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
-          {/* Engine 1: Inventory Sync (DBMS) */}
+          {/* Feature 1: Inventory Sync */}
           <div className="bg-[#090d16] p-6 rounded-2xl border border-zinc-800 hover:border-emerald-500/40 transition">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -335,24 +336,24 @@ export const LandingPage: React.FC = () => {
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-extrabold text-white">Engine 1: Inventory Sync</h3>
-                  <div className="text-[10px] text-zinc-500 font-mono">DBMS • Single-Writer Ledger</div>
+                  <h3 className="text-sm font-extrabold text-white">Live Multi-Hospital Inventory Sync</h3>
+                  <div className="text-[10px] text-zinc-500 font-mono">Centralized Stock Ledger</div>
                 </div>
               </div>
               <span className="text-[9px] font-mono bg-emerald-950 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded uppercase font-bold">
-                ACID MUTEX
+                ZERO CONFLICTS
               </span>
             </div>
             <p className="text-xs text-zinc-400 leading-relaxed mb-4">
-              Guarantees the core system invariant: <code className="bg-black px-1.5 py-0.5 rounded text-emerald-400 font-mono text-[11px]">available = total - held - in_transit</code>. Employs ascending-id lock acquisition to eliminate cyclic deadlock during multi-hospital reservation handoffs.
+              Keeps blood counts perfectly synchronized across all participating hospitals. Automatically accounts for on-shelf, reserved, and in-transit units to prevent sudden local shortages.
             </p>
             <div className="text-[11px] text-zinc-400 flex items-center justify-between border-t border-zinc-800/60 pt-3 font-mono">
-              <span>Concurrency: Parallel Safe</span>
-              <span className="text-emerald-400">SELECT ... FOR UPDATE</span>
+              <span>Reliability: 100% Real-Time</span>
+              <span className="text-emerald-400">Automated Conflict Resolution</span>
             </div>
           </div>
 
-          {/* Engine 2: Matching Engine (DSA) */}
+          {/* Feature 2: Smart Routing */}
           <div className="bg-[#090d16] p-6 rounded-2xl border border-zinc-800 hover:border-teal-500/40 transition">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -360,24 +361,24 @@ export const LandingPage: React.FC = () => {
                   <Network className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-extrabold text-white">Engine 2: Dijkstra Matching</h3>
-                  <div className="text-[10px] text-zinc-500 font-mono">DSA • Graph Min-Heap</div>
+                  <h3 className="text-sm font-extrabold text-white">Smart Proximity & Transit Routing</h3>
+                  <div className="text-[10px] text-zinc-500 font-mono">Intelligent Hospital Matching</div>
                 </div>
               </div>
               <span className="text-[9px] font-mono bg-teal-950 text-teal-300 border border-teal-800/60 px-2 py-0.5 rounded uppercase font-bold">
-                O((V+E) log V)
+                FASTEST TRANSIT
               </span>
             </div>
             <p className="text-xs text-zinc-400 leading-relaxed mb-4">
-              Evaluates regional road networks using Dijkstra's shortest path. Multi-factor scoring combines shelf-life (FEFO), distance, and quantity fit under <code className="bg-black px-1.5 py-0.5 rounded text-teal-400 font-mono text-[11px]">FASTEST</code> and <code className="bg-black px-1.5 py-0.5 rounded text-teal-400 font-mono text-[11px]">BALANCED</code> weights.
+              Analyzes regional hospital road networks and live driving distances to dispatch blood from the closest facility, optimizing travel times and vehicle routes.
             </p>
             <div className="text-[11px] text-zinc-400 flex items-center justify-between border-t border-zinc-800/60 pt-3 font-mono">
-              <span>Min Viability Buffer: 4 Hours</span>
-              <span className="text-teal-400">Road Speed: 40 km/h</span>
+              <span>Transit Safety: 4-Hour Buffer</span>
+              <span className="text-teal-400">Real-World Road Maps Integrated</span>
             </div>
           </div>
 
-          {/* Engine 3: Expiry Engine & Alert Dispatcher (DSA + OS) */}
+          {/* Feature 3: Freshness & Shelf-Life */}
           <div className="bg-[#090d16] p-6 rounded-2xl border border-zinc-800 hover:border-green-500/40 transition">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -385,24 +386,24 @@ export const LandingPage: React.FC = () => {
                   <Clock className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-extrabold text-white">Engine 3: Event-Driven Expiry</h3>
-                  <div className="text-[10px] text-zinc-500 font-mono">DSA & OS • Min-Heap FEFO</div>
+                  <h3 className="text-sm font-extrabold text-white">Freshness & Shelf-Life Management</h3>
+                  <div className="text-[10px] text-zinc-500 font-mono">Zero-Waste First-Expiry Protocol</div>
                 </div>
               </div>
               <span className="text-[9px] font-mono bg-green-950 text-green-300 border border-green-800/60 px-2 py-0.5 rounded uppercase font-bold">
-                O(log N) TRANSITIONS
+                ACTIVE MONITORING
               </span>
             </div>
             <p className="text-xs text-zinc-400 leading-relaxed mb-4">
-              Maintains an event-driven min-heap tracking blood units across tiers: <code className="bg-black px-1.5 py-0.5 rounded text-green-400 font-mono text-[11px]">VALID &rarr; NEAR_EXPIRY &rarr; CRITICAL &rarr; EXPIRED</code>. Escalates unacknowledged critical alerts via bounded-buffer producer-consumer queues.
+              Tracks expiration timelines down to the minute. Prioritizes units nearing shelf-life for scheduled transfusions, preventing life-saving blood from expiring on hospital shelves.
             </p>
             <div className="text-[11px] text-zinc-400 flex items-center justify-between border-t border-zinc-800/60 pt-3 font-mono">
-              <span>RBC Critical: &lt; 72 Hours</span>
-              <span className="text-green-400">Platelets: &lt; 24 Hours</span>
+              <span>Red Blood Cells: 42-Day Cycle</span>
+              <span className="text-green-400">Platelets: 5-Day Freshness</span>
             </div>
           </div>
 
-          {/* Engine 4: Request Scheduling Engine (OS) */}
+          {/* Feature 4: Priority Emergency Dispatch */}
           <div className="bg-[#090d16] p-6 rounded-2xl border border-zinc-800 hover:border-emerald-500/40 transition">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -410,20 +411,20 @@ export const LandingPage: React.FC = () => {
                   <Layers className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-extrabold text-white">Engine 4: Request Scheduler</h3>
-                  <div className="text-[10px] text-zinc-500 font-mono">OS • Multilevel Feedback Queue</div>
+                  <h3 className="text-sm font-extrabold text-white">Priority Emergency Dispatch System</h3>
+                  <div className="text-[10px] text-zinc-500 font-mono">Fair & Triage-Based Queuing</div>
                 </div>
               </div>
               <span className="text-[9px] font-mono bg-emerald-950 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded uppercase font-bold">
-                BANKER'S SAFETY
+                TRIAGE ASSURED
               </span>
             </div>
             <p className="text-xs text-zinc-400 leading-relaxed mb-4">
-              Three-tiered MLFQ queue (Level 0: Emergency, Level 1: Urgent, Level 2: Routine). Higher-priority requests preempt tentative holds, while preempted victims receive +15 compensation boost to prevent queue starvation.
+              Multi-level emergency triage ensures critical surgical emergencies receive immediate stock while routine clinical requests maintain fair, guaranteed delivery schedules.
             </p>
             <div className="text-[11px] text-zinc-400 flex items-center justify-between border-t border-zinc-800/60 pt-3 font-mono">
-              <span>Preemption Boost: +15 Pts</span>
-              <span className="text-emerald-400">Deadlock: Banker Safe State</span>
+              <span>Emergency Preemption: Instant</span>
+              <span className="text-emerald-400">Fair Waitlist Protection Active</span>
             </div>
           </div>
 
@@ -439,13 +440,13 @@ export const LandingPage: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-widest">
-                CONNECTED REGIONAL GRID
+                REGIONAL HEALTHCARE ALLIANCE
               </div>
               <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1">
-                5 Regional Hospital Nodes
+                Connected Regional Medical Centers
               </h2>
               <p className="text-xs text-zinc-400">
-                Synchronized inventory ledger nodes connected with transit distance matrices.
+                A unified network of accredited hospitals collaborating to share emergency blood reserves.
               </p>
             </div>
 
@@ -453,7 +454,7 @@ export const LandingPage: React.FC = () => {
               to="/hospitals"
               className="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-bold hover:underline font-mono"
             >
-              <span>Explore All Nodes in Dashboard</span>
+              <span>View All Facilities in Dashboard</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -492,18 +493,18 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* ============================================================ */}
-      {/* 6. ACADEMIC SCENARIOS S1–S6 INTERACTIVE VERIFIER             */}
+      {/* 6. INTERACTIVE OPERATIONAL SIMULATIONS (Clear & Friendly)    */}
       {/* ============================================================ */}
-      <section id="scenarios" className="py-24 max-w-6xl mx-auto px-4 sm:px-6 space-y-12">
+      <section id="simulations" className="py-24 max-w-6xl mx-auto px-4 sm:px-6 space-y-12">
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <div className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-widest">
-            LIVE VERIFICATION SUITE
+            INTERACTIVE PLATFORM DEMO
           </div>
           <h2 className="text-3xl font-black text-white tracking-tight">
-            Academic Test Scenarios (S1 – S6)
+            Simulate Real-World Emergency Scenarios
           </h2>
           <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
-            Click any scenario button below to verify algorithm correctness, preemption compensation math, and deadlock-free execution in real time.
+            Test how the platform handles high-priority emergencies, fair queue distribution, multi-center stock transfers, and expiration alerts in real time.
           </p>
         </div>
 
@@ -511,23 +512,23 @@ export const LandingPage: React.FC = () => {
         <div className="bg-[#090d16] rounded-3xl border border-zinc-800 overflow-hidden shadow-2xl">
           {/* Top Scenario Selector Tabs */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border-b border-zinc-800 bg-black/60">
-            {scenariosList.map((sc) => (
+            {demosList.map((demo) => (
               <button
-                key={sc.id}
-                onClick={() => setSelectedScenario(sc.id)}
+                key={demo.id}
+                onClick={() => setSelectedDemo(demo.id)}
                 className={`p-3.5 text-left transition-all border-r border-zinc-800 last:border-r-0 cursor-pointer ${
-                  selectedScenario === sc.id
+                  selectedDemo === demo.id
                     ? 'bg-emerald-950/40 text-emerald-300 border-b-2 border-b-emerald-400'
                     : 'text-zinc-400 hover:bg-zinc-900/60 hover:text-white'
                 }`}
               >
                 <div className="flex items-center justify-between gap-1 mb-1">
-                  <span className="font-mono text-xs font-black">{sc.id}</span>
+                  <span className="font-mono text-xs font-black">{demo.id}</span>
                   <span className="text-[8px] font-mono px-1 py-0.2 rounded bg-zinc-800 text-zinc-300">
-                    {sc.badge}
+                    {demo.badge}
                   </span>
                 </div>
-                <div className="text-[11px] font-bold text-white truncate">{sc.title}</div>
+                <div className="text-[11px] font-bold text-white truncate">{demo.title}</div>
               </button>
             ))}
           </div>
@@ -537,29 +538,29 @@ export const LandingPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-                  <span className="text-emerald-400 font-mono">[{selectedScenario}]</span>
-                  <span>{scenariosList.find(s => s.id === selectedScenario)?.title}</span>
+                  <span className="text-emerald-400 font-mono">[{selectedDemo}]</span>
+                  <span>{demosList.find(d => d.id === selectedDemo)?.title}</span>
                 </h3>
                 <p className="text-xs text-zinc-400 mt-0.5">
-                  Engine Tested: <span className="text-emerald-400 font-mono">{scenariosList.find(s => s.id === selectedScenario)?.engine}</span>
+                  Workflow Type: <span className="text-emerald-400 font-mono">{demosList.find(d => d.id === selectedDemo)?.category}</span>
                 </p>
               </div>
 
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => handleRunScenario(selectedScenario)}
-                  disabled={scenarioRunning}
+                  onClick={() => handleRunDemo(selectedDemo)}
+                  disabled={demoRunning}
                   className="bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black font-black px-5 py-2.5 rounded-xl text-xs tracking-wider uppercase flex items-center gap-2 shadow-lg shadow-emerald-500/25 transition disabled:opacity-50 cursor-pointer"
                 >
-                  {scenarioRunning ? (
+                  {demoRunning ? (
                     <>
                       <RotateCcw className="w-4 h-4 animate-spin text-black" />
-                      <span>Executing Trace...</span>
+                      <span>Simulating Workflow...</span>
                     </>
                   ) : (
                     <>
                       <Play className="w-4 h-4 text-black fill-black" />
-                      <span>Run Scenario {selectedScenario}</span>
+                      <span>Run Live Simulation</span>
                     </>
                   )}
                 </button>
@@ -569,11 +570,11 @@ export const LandingPage: React.FC = () => {
             {/* Terminal Output Screen */}
             <div className="p-4 rounded-xl bg-black border border-zinc-800 font-mono text-xs text-zinc-300 space-y-2">
               <div className="flex items-center justify-between text-[10px] text-zinc-500 border-b border-zinc-800 pb-2">
-                <span>SIMULATED ENGINE EXECUTION LOG</span>
+                <span>SIMULATED WORKFLOW EXECUTION LOG</span>
                 <span className="text-emerald-400 font-bold">STATUS: READY</span>
               </div>
               <p className="text-emerald-300 pt-1 leading-relaxed">
-                &gt; {scenarioLogs[selectedScenario]}
+                &gt; {demoLogs[selectedDemo]}
               </p>
             </div>
           </div>
@@ -588,13 +589,13 @@ export const LandingPage: React.FC = () => {
           
           <div className="text-center space-y-3">
             <div className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-widest">
-              SYSTEM TRANSPARENCY
+              HELP & COMMON INQUIRIES
             </div>
             <h2 className="text-3xl font-black text-white tracking-tight">
-              Frequently Asked Questions & Criteria
+              Frequently Asked Questions
             </h2>
             <p className="text-xs text-zinc-400">
-              Details on algorithms, safety boundaries, and single-writer concurrency guarantees.
+              Everything you need to know about how the BloodResource Sync network coordinates hospital supplies.
             </p>
           </div>
 
@@ -635,7 +636,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* ============================================================ */}
-      {/* 8. FOOTER & CONTACT (TCS CodeVita Style Institutional Foot)   */}
+      {/* 8. FOOTER & CONTACT (Clean Institutional Footer)             */}
       {/* ============================================================ */}
       <footer id="contact" className="bg-black text-zinc-400 border-t border-zinc-800/80 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
@@ -650,46 +651,46 @@ export const LandingPage: React.FC = () => {
                 <span className="font-black text-white text-base tracking-tight">BloodResource Sync™</span>
               </div>
               <p className="text-xs text-zinc-500 leading-relaxed">
-                Priority-driven blood coordination and expiry management software grid. Academic Pair Programming Project.
+                The intelligent multi-hospital blood coordination and emergency logistics platform. Connecting medical facilities to deliver lifesaving resources when every second counts.
               </p>
               <div className="text-[10px] font-mono text-emerald-400">
                 STATUS: LIVE REGIONAL GRID ACTIVE
               </div>
             </div>
 
-            {/* Col 2: Quick Links */}
+            {/* Col 2: Platform Navigation */}
             <div className="space-y-2.5 text-xs">
               <div className="font-bold text-white font-mono uppercase text-[11px] tracking-wider">
-                System Quick Links
+                Platform Navigation
               </div>
               <ul className="space-y-1.5 text-zinc-400">
                 <li><Link to="/dashboard" className="hover:text-emerald-400 transition">Executive Dashboard</Link></li>
-                <li><Link to="/engine-control" className="hover:text-emerald-400 transition">Engine Control Center</Link></li>
-                <li><Link to="/inventory" className="hover:text-emerald-400 transition">FEFO Inventory Ledger</Link></li>
-                <li><Link to="/requests" className="hover:text-emerald-400 transition">MLFQ Scheduling</Link></li>
+                <li><Link to="/inventory" className="hover:text-emerald-400 transition">Live Inventory Tracking</Link></li>
+                <li><Link to="/requests" className="hover:text-emerald-400 transition">Emergency Requests</Link></li>
+                <li><Link to="/transfers" className="hover:text-emerald-400 transition">Transit & Delivery</Link></li>
               </ul>
             </div>
 
-            {/* Col 3: CS Engines */}
+            {/* Col 3: Key Capabilities */}
             <div className="space-y-2.5 text-xs">
               <div className="font-bold text-white font-mono uppercase text-[11px] tracking-wider">
-                Algorithms & Engines
+                Key Capabilities
               </div>
-              <ul className="space-y-1.5 text-zinc-400 font-mono text-[11px]">
-                <li>Engine 1: DBMS ACID Single-Writer</li>
-                <li>Engine 2: Dijkstra Shortest Path DSA</li>
-                <li>Engine 3: Min-Heap Expiry & Alerts</li>
-                <li>Engine 4: OS Multilevel Queue MLFQ</li>
+              <ul className="space-y-1.5 text-zinc-400 text-[11px]">
+                <li>• Real-Time Inventory Sync</li>
+                <li>• Smart Hospital Routing</li>
+                <li>• Automated Shelf-Life Alerts</li>
+                <li>• Priority Triage Dispatch</li>
               </ul>
             </div>
 
             {/* Col 4: Institutional Disclaimer */}
             <div className="space-y-3 text-xs">
               <div className="font-bold text-white font-mono uppercase text-[11px] tracking-wider">
-                Compliance Disclaimer
+                Operational Safety
               </div>
               <p className="text-[11px] text-zinc-500 leading-snug">
-                This software is an engine-centric academic prototype. It shares recorded inventory attributes and does not make clinical suitability determinations.
+                BloodResource Sync provides operational coordination and inventory visibility across participating healthcare centers. All blood component suitability and transfusion procedures remain under physician clinical supervision.
               </p>
               <div className="text-[10px] text-zinc-600 font-mono">
                 © 2026 BloodResource Sync. All rights reserved.
@@ -700,7 +701,7 @@ export const LandingPage: React.FC = () => {
           {/* Bottom Bar */}
           <div className="pt-8 border-t border-zinc-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
             <div>
-              Built for Multi-Hospital Blood Resource Sharing System & Expiry Management.
+              Multi-Hospital Emergency Blood Resource & Logistics Coordination Network.
             </div>
             <div className="flex items-center gap-4">
               <button
@@ -716,7 +717,7 @@ export const LandingPage: React.FC = () => {
         </div>
       </footer>
 
-      {/* Floating Back-To-Top / Quick Access Button (CodeVita Bottom-Right Blue Arrow Style) */}
+      {/* Floating Back-To-Top Arrow Button */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
         <button
           onClick={scrollToTop}

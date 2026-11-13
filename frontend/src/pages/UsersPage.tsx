@@ -13,10 +13,10 @@ export const UsersPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-          <UsersIcon className="w-6 h-6 text-crimson-600" /> Authorized Personnel & RBAC Roles
+        <h1 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+          <UsersIcon className="w-6 h-6 text-emerald-400" /> Authorized Hospital Staff & Access Roles
         </h1>
-        <p className="text-xs text-slate-500">System Admin, Hospital Admin, Inventory Manager, Request Manager.</p>
+        <p className="text-xs text-zinc-400">Verified medical directors, request managers, inventory coordinators, and system administrators.</p>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-xs">

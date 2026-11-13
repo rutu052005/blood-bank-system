@@ -12,11 +12,11 @@ export const SettingsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-          <Settings className="w-6 h-6 text-crimson-600" /> Engine Weight & Hyperparameter Settings
+        <h1 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+          <Settings className="w-6 h-6 text-emerald-400" /> Platform Configuration & Settings
         </h1>
-        <p className="text-xs text-slate-500">
-          Editable parameters for Matching scores, OS scheduler aging steps, hold TTL, and alert escalation times.
+        <p className="text-xs text-zinc-400">
+          Configurable parameters for matching priorities, queue aging intervals, reservation hold timeouts, and alert thresholds.
         </p>
       </div>
 

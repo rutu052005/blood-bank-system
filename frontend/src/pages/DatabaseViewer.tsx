@@ -58,11 +58,11 @@ export const DatabaseViewer: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <Database className="w-6 h-6 text-crimson-600" /> Database Inspector (Supabase & Engine Store)
+          <h1 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <Database className="w-6 h-6 text-emerald-400" /> System Records Inspector
           </h1>
-          <p className="text-xs text-slate-500">
-            Admin tool showing raw schema tables and record counts. Secrets are never exposed.
+          <p className="text-xs text-zinc-400">
+            Secure administrative inspection of hospital records and system tables.
           </p>
         </div>
 

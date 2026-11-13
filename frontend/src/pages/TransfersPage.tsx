@@ -32,11 +32,11 @@ export const TransfersPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <ArrowLeftRight className="w-6 h-6 text-crimson-600" /> Multi-Hospital Transfer Dispatch
+          <h1 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <ArrowLeftRight className="w-6 h-6 text-emerald-400" /> Multi-Hospital Transfer & Delivery
           </h1>
-          <p className="text-xs text-slate-500">
-            Track units in transit. Confirm receipt triggers source-out & destination-in ACID transaction.
+          <p className="text-xs text-zinc-400">
+            Real-time courier transit tracking with verified dual-hospital receipt confirmation.
           </p>
         </div>
       </div>

@@ -29,11 +29,11 @@ export const AlertsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <Bell className="w-6 h-6 text-crimson-600" /> Prioritized Alerts & Escalation Log
+          <h1 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <Bell className="w-6 h-6 text-emerald-400" /> System Alerts & Priority Notifications
           </h1>
-          <p className="text-xs text-slate-500">
-            Alerts sorted by severity (CRITICAL first). Unacknowledged CRITICAL alerts escalate over simulated time.
+          <p className="text-xs text-zinc-400">
+            Real-time critical notices for expiring units, stock thresholds, and urgent hospital transfer requests.
           </p>
         </div>
       </div>

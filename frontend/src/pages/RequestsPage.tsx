@@ -48,11 +48,11 @@ export const RequestsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            <FileSpreadsheet className="w-6 h-6 text-crimson-600" /> Requests & Multilevel Scheduler
+          <h1 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <FileSpreadsheet className="w-6 h-6 text-emerald-400" /> Patient Blood Requests & Dispatch
           </h1>
-          <p className="text-xs text-slate-500">
-            Priority queues (EMERGENCY, URGENT, ROUTINE) with aging & preemption rules.
+          <p className="text-xs text-zinc-400">
+            Emergency triage queues (Emergency, Urgent, Routine) with fair waitlist management.
           </p>
         </div>
 

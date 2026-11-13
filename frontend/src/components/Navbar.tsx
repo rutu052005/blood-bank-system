@@ -48,7 +48,7 @@ export const Navbar: React.FC = () => {
               <span>BloodResource</span>
               <span className="text-emerald-400 font-black">Sync</span>
             </div>
-            <div className="text-[10px] text-zinc-400 font-mono tracking-wider">OBSIDIAN HEALTH GRID</div>
+            <div className="text-[10px] text-zinc-400 font-mono tracking-wider">HOSPITAL NETWORK</div>
           </div>
         </Link>
 
