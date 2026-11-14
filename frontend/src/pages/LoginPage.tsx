@@ -80,46 +80,51 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const demoRoles = [
+  const platformAdminRole = {
+    id: 'admin@demo.local',
+    title: 'Central System Admin',
+    name: 'Dr. Suresh Admin',
+    scope: 'CENTRAL PLATFORM OVERSEER',
+    hospital: '🌐 All Hospitals & Cloud Infrastructure (Global Scope)',
+    tag: 'FULL ROOT ACCESS',
+    tagColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+    icon: ShieldCheck,
+    description: 'Single central administrator overseeing the entire website, servers, ML algorithms & network-wide progress.',
+  };
+
+  const hospitalAppointedRoles = [
     {
-      id: 'admin@demo.local',
-      title: 'System Admin',
-      name: 'Dr. Suresh Admin',
-      hospital: 'Metro City Hospital',
-      tag: 'FULL ROOT ACCESS',
-      tagColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-      icon: ShieldCheck,
-      description: 'Full administrative access, operations control & live workflows',
-    },
-    {
-      id: 'priya@demo.local',
-      title: 'Request Manager',
-      name: 'Priya Shah',
-      hospital: 'District Hospital',
-      tag: 'EMERGENCY DISPATCH',
-      tagColor: 'bg-teal-500/20 text-teal-300 border-teal-500/40',
-      icon: Network,
-      description: 'Issue emergency requests & coordinate nearest hospital matching',
+      id: 'sneha@demo.local',
+      title: 'Hospital Admin',
+      name: 'Dr. Sneha Joshi',
+      scope: 'Appointed for: Sahyadri Medical Center',
+      hospital: 'Sahyadri Medical Center',
+      tag: 'HOSPITAL PROGRESS',
+      tagColor: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
+      icon: Building2,
+      description: 'Appointed by Sahyadri to oversee the entire hospital\'s operations, compliance & transfer authorisations.',
     },
     {
       id: 'anil@demo.local',
       title: 'Inventory Manager',
       name: 'Anil Kumar',
+      scope: 'Appointed for: KLE Hospital',
       hospital: 'KLE Hospital',
-      tag: 'STOCK MANAGEMENT',
+      tag: 'LOCAL BLOOD BANK',
       tagColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
       icon: Droplets,
-      description: 'Manage hospital stock entries & confirm transfer receipts',
+      description: 'Appointed by KLE to manage physical blood stock, expiry tiers & trigger AI donor replenishment.',
     },
     {
-      id: 'sneha@demo.local',
-      title: 'Hospital Admin',
-      name: 'Dr. Sneha Joshi',
-      hospital: 'Sahyadri Medical Center',
-      tag: 'AUTHORIZATION',
-      tagColor: 'bg-emerald-400/20 text-emerald-200 border-emerald-400/40',
-      icon: Building2,
-      description: 'Authorize inter-hospital transfers & safety signoffs',
+      id: 'priya@demo.local',
+      title: 'Request Manager',
+      name: 'Priya Shah (ER/ICU)',
+      scope: 'Appointed for: District Hospital',
+      hospital: 'District Hospital',
+      tag: 'EMERGENCY DISPATCH',
+      tagColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+      icon: Network,
+      description: 'Authorized clinical staff from District Hospital issuing emergency blood requests across the network.',
     },
   ];
 
@@ -448,65 +453,120 @@ export const LoginPage: React.FC = () => {
                 </button>
               </form>
 
-              {/* 1-Click Interactive Presets */}
+              {/* Multi-Hospital Role Hierarchy Presets */}
               <div className="pt-4 border-t border-zinc-800/80 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="text-[10px] font-black uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Instant 1-Click Institutional Profiles</span>
+                    <span>Multi-Hospital Role Architecture (1-Click Demo)</span>
                   </div>
                   <span className="text-[10px] text-zinc-500 font-mono">Password: demo123</span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {demoRoles.map((role) => {
-                    const RoleIcon = role.icon;
-                    const isSelected = activeRole === role.id;
+                {/* TIER 1: Single Platform Administrator */}
+                <div className="space-y-1">
+                  <div className="text-[9px] font-mono uppercase tracking-wider text-emerald-400 flex items-center gap-1 font-bold">
+                    <span>👑 Platform Level: Central System Overseer (Single Authority)</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickLogin(platformAdminRole.id)}
+                    className={`w-full p-3 rounded-2xl text-left border transition-all duration-200 relative group overflow-hidden ${
+                      activeRole === platformAdminRole.id
+                        ? 'bg-emerald-950/40 border-emerald-500/80 shadow-lg shadow-emerald-950/50 ring-1 ring-emerald-500/40'
+                        : 'bg-zinc-950/80 hover:bg-zinc-900 border-zinc-800/80 hover:border-zinc-700'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                          activeRole === platformAdminRole.id ? 'bg-emerald-500 text-black font-black' : 'bg-zinc-900 text-emerald-400 group-hover:bg-zinc-800'
+                        } transition`}>
+                          <ShieldCheck className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="font-extrabold text-white text-xs tracking-tight flex items-center gap-2">
+                            <span>{platformAdminRole.title}</span>
+                            <span className="text-[9px] font-mono text-emerald-400 font-normal">({platformAdminRole.name})</span>
+                          </div>
+                          <div className="text-[10px] text-zinc-400 font-mono">
+                            {platformAdminRole.scope}
+                          </div>
+                        </div>
+                      </div>
 
-                    return (
-                      <button
-                        key={role.id}
-                        type="button"
-                        onClick={() => handleQuickLogin(role.id)}
-                        className={`p-3 rounded-2xl text-left border transition-all duration-200 relative group overflow-hidden ${
-                          isSelected
-                            ? 'bg-emerald-950/40 border-emerald-500/80 shadow-lg shadow-emerald-950/50 ring-1 ring-emerald-500/40'
-                            : 'bg-zinc-950/60 hover:bg-zinc-900 border-zinc-800/80 hover:border-zinc-700'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2 mb-1.5">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                              isSelected ? 'bg-emerald-500 text-black font-black' : 'bg-zinc-900 text-zinc-300 group-hover:text-emerald-400 group-hover:bg-zinc-800'
-                            } transition`}>
-                              <RoleIcon className="w-3.5 h-3.5" />
-                            </div>
-                            <div>
-                              <div className="font-extrabold text-white text-xs tracking-tight">
-                                {role.title}
+                      <span className={`text-[8px] font-black tracking-wider uppercase px-2 py-0.5 rounded-full border ${platformAdminRole.tagColor}`}>
+                        {platformAdminRole.tag}
+                      </span>
+                    </div>
+
+                    <p className="text-[10px] text-zinc-400 leading-snug">
+                      {platformAdminRole.description}
+                    </p>
+
+                    <div className="mt-2 text-[9px] font-mono text-zinc-500 flex items-center justify-between border-t border-zinc-800/40 pt-1.5">
+                      <span className="text-emerald-400 font-sans font-medium">{platformAdminRole.hospital}</span>
+                      <span className="text-emerald-400 font-semibold group-hover:underline">Login as Platform Overseer →</span>
+                    </div>
+                  </button>
+                </div>
+
+                {/* TIER 2: Hospital-Appointed Roles */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between text-[9px] font-mono uppercase tracking-wider text-zinc-400 font-bold">
+                    <span>🏥 Hospital Appointed Staff (3 Roles Appointed Per Hospital)</span>
+                    <span className="text-zinc-500 text-[8px] font-normal lowercase">examples across regional network</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {hospitalAppointedRoles.map((role) => {
+                      const RoleIcon = role.icon;
+                      const isSelected = activeRole === role.id;
+
+                      return (
+                        <button
+                          key={role.id}
+                          type="button"
+                          onClick={() => handleQuickLogin(role.id)}
+                          className={`p-2.5 rounded-2xl text-left border transition-all duration-200 relative group overflow-hidden flex flex-col justify-between ${
+                            isSelected
+                              ? 'bg-zinc-900 border-emerald-500/80 shadow-lg ring-1 ring-emerald-500/40'
+                              : 'bg-zinc-950/60 hover:bg-zinc-900 border-zinc-800/80 hover:border-zinc-700'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-start justify-between gap-1.5 mb-1.5">
+                              <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
+                                isSelected ? 'bg-emerald-500 text-black font-black' : 'bg-zinc-900 text-zinc-300 group-hover:text-emerald-400'
+                              } transition`}>
+                                <RoleIcon className="w-3 h-3" />
                               </div>
-                              <div className="text-[10px] text-zinc-400">
-                                {role.name}
-                              </div>
+
+                              <span className={`text-[7px] font-black tracking-wider uppercase px-1.5 py-0.5 rounded-full border ${role.tagColor}`}>
+                                {role.tag}
+                              </span>
                             </div>
+
+                            <div className="font-extrabold text-white text-[11px] tracking-tight">
+                              {role.title}
+                            </div>
+                            <div className="text-[10px] text-zinc-400">
+                              {role.name}
+                            </div>
+
+                            <p className="text-[9px] text-zinc-400 leading-snug line-clamp-2 mt-1">
+                              {role.description}
+                            </p>
                           </div>
 
-                          <span className={`text-[8px] font-black tracking-wider uppercase px-1.5 py-0.5 rounded-full border ${role.tagColor}`}>
-                            {role.tag}
-                          </span>
-                        </div>
-
-                        <p className="text-[10px] text-zinc-400 leading-snug line-clamp-1">
-                          {role.description}
-                        </p>
-
-                        <div className="mt-2 text-[9px] font-mono text-zinc-500 flex items-center justify-between border-t border-zinc-800/40 pt-1.5">
-                          <span className="text-zinc-400 font-sans">{role.hospital}</span>
-                          <span className="text-emerald-400 font-semibold group-hover:underline">Login →</span>
-                        </div>
-                      </button>
-                    );
-                  })}
+                          <div className="mt-2 text-[8px] font-mono text-zinc-500 border-t border-zinc-800/40 pt-1.5 flex items-center justify-between">
+                            <span className="text-zinc-300 font-sans truncate font-medium">{role.hospital}</span>
+                            <span className="text-emerald-400 font-semibold group-hover:underline shrink-0">Login →</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
