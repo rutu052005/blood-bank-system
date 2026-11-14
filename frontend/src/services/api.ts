@@ -190,19 +190,68 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
       return newReq as unknown as T;
     }
     if (endpoint.includes('/matches')) {
+      const reqId = endpoint.split('/')[2];
+      const req = mockStore.requests.find(r => r.id === reqId);
+      const reqGroup = req?.items[0]?.blood_group || 'O+';
+      const reqComp = req?.items[0]?.component || 'RBC';
+      const reqQty = req?.items[0]?.quantity || 2;
+      const reqHospId = req?.requesting_hospital_id || 'H002';
+
+      // Find compatible inventory in other hospitals (FEFO: sorted by closest expiry)
+      const compatibleUnits = mockStore.inventory
+        .filter(i => 
+          i.hospital_id !== reqHospId && 
+          i.available_quantity > 0 &&
+          (i.blood_group === reqGroup || i.blood_group === 'O-') &&
+          i.component === reqComp
+        )
+        .sort((a, b) => new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime());
+
+      if (compatibleUnits.length > 0) {
+        return compatibleUnits.slice(0, 3).map((unit, idx) => {
+          const daysLeft = Math.max(1, Math.round((new Date(unit.expiry_date).getTime() - Date.now()) / (1000 * 3600 * 24)));
+          const allocQty = Math.min(reqQty, unit.available_quantity);
+          return {
+            hospital_id: unit.hospital_id,
+            hospital_name: unit.hospital_name || 'Partner Hospital',
+            inventory_id: unit.id,
+            blood_group: unit.blood_group,
+            component: unit.component,
+            quantity_available: unit.available_quantity,
+            allocated_quantity: allocQty,
+            expiry_date: unit.expiry_date,
+            days_to_expiry: daysLeft,
+            distance_km: 4.5 + idx * 3.2,
+            shortest_path: [reqHospId, unit.hospital_id],
+            total_score: Math.max(70, Math.round(98 - idx * 8 - (daysLeft < 5 ? 5 : 0))),
+            expiry_score: daysLeft < 7 ? 98.0 : 85.0,
+            distance_score: 95.0 - idx * 5,
+            fit_score: allocQty >= reqQty ? 95.0 : 80.0,
+            checks: {
+              blood_group_match: true,
+              component_match: true,
+              quantity_available: unit.available_quantity >= allocQty,
+              inventory_available: true,
+              viable_before_expiry: daysLeft > 1,
+            }
+          };
+        }) as unknown as T;
+      }
+
+      // Fallback default match
       return [
         {
           hospital_id: 'H001',
           hospital_name: 'KLE Hospital',
           inventory_id: 'INV001',
-          blood_group: 'O+',
-          component: 'RBC',
+          blood_group: reqGroup,
+          component: reqComp,
           quantity_available: 10,
-          allocated_quantity: 2,
+          allocated_quantity: reqQty,
           expiry_date: new Date(Date.now() + 30 * 86400000).toISOString(),
           days_to_expiry: 30,
           distance_km: 5.0,
-          shortest_path: ['H002', 'H001'],
+          shortest_path: [reqHospId, 'H001'],
           total_score: 94.2,
           expiry_score: 95.0,
           distance_score: 98.0,
@@ -222,18 +271,96 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
 
   // 6. Transfers
   if (endpoint.startsWith('/transfers')) {
+    // 6a. Confirm Receipt: /transfers/:id/receive
+    if (endpoint.includes('/receive') && options.method === 'POST') {
+      const transferId = endpoint.split('/')[2];
+      const transfer = mockStore.transfers.find(t => t.id === transferId);
+      if (transfer) {
+        transfer.status = 'RECEIVED';
+        transfer.received_at = new Date().toISOString();
+
+        // Source hospital: remove from in-transit & total
+        const sourceUnit = mockStore.inventory.find(i => i.id === transfer.inventory_id);
+        if (sourceUnit) {
+          sourceUnit.quantity_in_transit = Math.max(0, sourceUnit.quantity_in_transit - transfer.quantity);
+          sourceUnit.quantity_total = Math.max(0, sourceUnit.quantity_total - transfer.quantity);
+          sourceUnit.available_quantity = Math.max(0, sourceUnit.quantity_total - sourceUnit.quantity_held - sourceUnit.quantity_in_transit);
+        }
+
+        // Destination hospital: add transferred units
+        const bloodGrp = transfer.blood_group || sourceUnit?.blood_group || 'O+';
+        const comp = transfer.component || sourceUnit?.component || 'RBC';
+        const destUnit = mockStore.inventory.find(i =>
+          i.hospital_id === transfer.destination_hospital_id &&
+          i.blood_group === bloodGrp &&
+          i.component === comp
+        );
+
+        if (destUnit) {
+          destUnit.quantity_total += transfer.quantity;
+          destUnit.available_quantity = Math.max(0, destUnit.quantity_total - destUnit.quantity_held - destUnit.quantity_in_transit);
+        } else {
+          mockStore.inventory.unshift({
+            id: 'INV' + (mockStore.inventory.length + 1).toString().padStart(3, '0'),
+            hospital_id: transfer.destination_hospital_id,
+            hospital_name: transfer.destination_hospital_name || 'Destination Hospital',
+            blood_group: bloodGrp as any,
+            component: comp as any,
+            quantity_total: transfer.quantity,
+            quantity_held: 0,
+            quantity_in_transit: 0,
+            available_quantity: transfer.quantity,
+            collection_date: sourceUnit?.collection_date || new Date().toISOString().split('T')[0],
+            expiry_date: sourceUnit?.expiry_date || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+            status: 'AVAILABLE',
+            tier: 'VALID',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+        }
+
+        // Fulfill matching request
+        const req = mockStore.requests.find(r => r.id === transfer.request_id);
+        if (req) {
+          req.status = 'FULFILLED';
+        }
+      }
+      return { success: true, message: 'Transfer received and inventory synced' } as unknown as T;
+    }
+
+    // 6b. Initiate Transfer: POST /transfers
     if (options.method === 'POST') {
       const data = options.body ? JSON.parse(options.body as string) : {};
+      const sourceUnit = mockStore.inventory.find(i => i.id === data.inventory_id);
+      const req = mockStore.requests.find(r => r.id === data.request_id);
+      const transferQty = Number(data.quantity) || 2;
+
+      // Update source inventory: mark in-transit
+      if (sourceUnit) {
+        if (sourceUnit.quantity_held >= transferQty) {
+          sourceUnit.quantity_held -= transferQty;
+        }
+        sourceUnit.quantity_in_transit += transferQty;
+        sourceUnit.available_quantity = Math.max(0, sourceUnit.quantity_total - sourceUnit.quantity_held - sourceUnit.quantity_in_transit);
+      }
+
+      // Update request status
+      if (req) {
+        req.status = 'IN_PROGRESS';
+      }
+
       const newTrf = {
         id: 'TRF' + (mockStore.transfers.length + 1).toString().padStart(3, '0'),
-        request_id: data.request_id || 'REQ001',
-        source_hospital_id: data.source_hospital_id || 'H001',
-        source_hospital_name: 'KLE Hospital',
-        destination_hospital_id: data.destination_hospital_id || 'H002',
-        destination_hospital_name: 'District Hospital',
-        inventory_id: data.inventory_id || 'INV001',
-        quantity: data.quantity || 2,
-        priority: 'URGENT' as const,
+        request_id: req ? req.id : (data.request_id || 'REQ001'),
+        source_hospital_id: sourceUnit ? sourceUnit.hospital_id : 'H001',
+        source_hospital_name: sourceUnit ? (sourceUnit.hospital_name || 'KLE Hospital') : 'KLE Hospital',
+        destination_hospital_id: req ? req.requesting_hospital_id : 'H002',
+        destination_hospital_name: req ? (req.requesting_hospital_name || 'District Hospital') : 'District Hospital',
+        inventory_id: sourceUnit ? sourceUnit.id : 'INV001',
+        blood_group: sourceUnit ? sourceUnit.blood_group : (req?.items[0]?.blood_group || 'O+'),
+        component: sourceUnit ? sourceUnit.component : (req?.items[0]?.component || 'RBC'),
+        quantity: transferQty,
+        priority: req ? req.priority : 'URGENT',
         status: 'IN_TRANSIT' as const,
         dispatched_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
