@@ -1,4 +1,4 @@
-import { mockStore } from './mockStore.js';
+import { mockStore, MOCK_USERS, MOCK_HOSPITALS } from './mockStore.js';
 import { getSupabaseClient } from './supabase.js';
 
 export const API_BASE = (import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api');
@@ -34,7 +34,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
     const contentType = response.headers.get('content-type') || '';
 
-    // If server returned non-OK, or returned HTML (static SPA index.html), use live Supabase or mock fallback
+    // If server returned non-OK, or returned HTML (static SPA index.html), use live Supabase direct sync
     if (!response.ok || contentType.includes('text/html') || response.status === 405 || response.status === 404) {
       return await handleMockFallback<T>(endpoint, options);
     }
@@ -52,14 +52,91 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
 async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const sb = getSupabaseClient();
+  const currentUser = typeof window !== 'undefined'
+    ? (() => {
+        try {
+          return JSON.parse(localStorage.getItem('demo_user') || '{}');
+        } catch {
+          return {};
+        }
+      })()
+    : {};
 
-  // 1. Auth
+  // Helper: Write structured audit log into Supabase audit_logs table
+  const logAudit = async (
+    action: string,
+    entityType: string,
+    entityId: string,
+    details: Record<string, any>,
+    actorId?: string
+  ) => {
+    if (!sb) return;
+    try {
+      await sb.from('audit_logs').insert([{
+        id: 'LOG_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+        user_id: actorId || currentUser.id || 'U002',
+        action,
+        entity_type: entityType,
+        entity_id: entityId,
+        details,
+        timestamp: new Date().toISOString(),
+      }]);
+    } catch (e) {
+      console.warn('[Supabase Audit Log Error]:', e);
+    }
+  };
+
+  // --------------------------------------------------------------------------
+  // 1. AUTHENTICATION & SESSIONS
+  // --------------------------------------------------------------------------
   if (endpoint === '/auth/login') {
     const body = options.body ? JSON.parse(options.body as string) : {};
+    const email = (body.email || '').trim().toLowerCase();
+
     if (sb) {
       try {
-        const { data: userRow } = await sb.from('users').select('*').eq('email', (body.email || '').toLowerCase()).single();
+        let { data: userRow } = await sb.from('users').select('*').ilike('email', email).maybeSingle();
+
+        // If user not in Supabase, seed from standard demo accounts so row exists permanently
+        if (!userRow) {
+          const defaultUser = MOCK_USERS.find(u => u.email.toLowerCase() === email);
+          if (defaultUser) {
+            const { data: created } = await sb.from('users').insert([{
+              id: defaultUser.id,
+              name: defaultUser.name,
+              email: defaultUser.email,
+              role: defaultUser.role,
+              hospital_id: defaultUser.hospital_id,
+              password_hash: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+              status: 'ACTIVE',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }]).select().single();
+            if (created) userRow = created;
+          }
+        }
+
         if (userRow) {
+          // 1. Update user updated_at in Supabase
+          try {
+            await sb.from('users').update({ updated_at: new Date().toISOString() }).eq('id', userRow.id);
+          } catch {}
+
+          // 2. Insert audit log event directly in Supabase
+          await logAudit(
+            'USER_LOGIN',
+            'AUTH',
+            userRow.id,
+            {
+              email: userRow.email,
+              role: userRow.role,
+              hospital_id: userRow.hospital_id,
+              user_name: userRow.name,
+              login_time: new Date().toISOString(),
+            },
+            userRow.id
+          );
+
           const token = 'supabase-jwt-' + userRow.id;
           const userObj = {
             id: userRow.id,
@@ -73,7 +150,9 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
           localStorage.setItem('demo_user', JSON.stringify(userObj));
           return { token, user: userObj } as unknown as T;
         }
-      } catch {}
+      } catch (authErr) {
+        console.warn('[Supabase Auth Fallback Error]:', authErr);
+      }
     }
     return mockStore.login(body) as unknown as T;
   }
@@ -89,11 +168,26 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
           email: body.email,
           role: body.role || 'HOSPITAL_ADMIN',
           hospital_id: body.hospital_id || 'H001',
-          password_hash: 'demo123',
+          password_hash: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
           status: 'ACTIVE',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         }]).select().single();
 
         if (createdUser) {
+          await logAudit(
+            'USER_REGISTER',
+            'AUTH',
+            createdUser.id,
+            {
+              name: createdUser.name,
+              email: createdUser.email,
+              role: createdUser.role,
+              hospital_id: createdUser.hospital_id,
+            },
+            createdUser.id
+          );
+
           const token = 'supabase-jwt-' + createdUser.id;
           const userObj = {
             id: createdUser.id,
@@ -107,16 +201,26 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
           localStorage.setItem('demo_user', JSON.stringify(userObj));
           return { token, user: userObj } as unknown as T;
         }
-      } catch {}
+      } catch (regErr) {
+        console.warn('[Supabase Register Error]:', regErr);
+      }
     }
     return mockStore.register(body) as unknown as T;
   }
 
   if (endpoint === '/auth/me') {
+    const saved = localStorage.getItem('demo_user');
+    if (saved) {
+      try {
+        return JSON.parse(saved) as unknown as T;
+      } catch {}
+    }
     return mockStore.getCurrentUser() as unknown as T;
   }
 
-  // 2. Hospitals & Users
+  // --------------------------------------------------------------------------
+  // 2. HOSPITALS & USERS
+  // --------------------------------------------------------------------------
   if (endpoint.startsWith('/hospitals')) {
     if (options.method === 'POST') {
       const data = options.body ? JSON.parse(options.body as string) : {};
@@ -128,9 +232,15 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
         contact_number: data.contact_number || '+91 80 0000 0000',
         status: 'ACTIVE' as const,
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
       if (sb) {
-        try { await sb.from('hospitals').insert([newHosp]); } catch {}
+        try {
+          await sb.from('hospitals').insert([newHosp]);
+          await logAudit('ADD_HOSPITAL', 'HOSPITAL', newHosp.id, { name: newHosp.name, city: newHosp.city });
+        } catch (e) {
+          console.warn('[Supabase Insert Hospital Error]', e);
+        }
       }
       mockStore.hospitals.push(newHosp);
       return newHosp as unknown as T;
@@ -138,7 +248,7 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
 
     if (sb) {
       try {
-        const { data: hospData, error: hospErr } = await sb.from('hospitals').select('*');
+        const { data: hospData, error: hospErr } = await sb.from('hospitals').select('*').order('id');
         if (!hospErr && hospData && hospData.length > 0) {
           return hospData as unknown as T;
         }
@@ -150,14 +260,16 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
   if (endpoint === '/users') {
     if (sb) {
       try {
-        const { data: uData, error: uErr } = await sb.from('users').select('*');
+        const { data: uData, error: uErr } = await sb.from('users').select('id, name, email, role, hospital_id, status, created_at, updated_at').order('id');
         if (!uErr && uData && uData.length > 0) return uData as unknown as T;
       } catch {}
     }
     return mockStore.users as unknown as T;
   }
 
-  // 3. Engines & Monitoring
+  // --------------------------------------------------------------------------
+  // 3. ENGINES & MONITORING
+  // --------------------------------------------------------------------------
   if (endpoint === '/engines/status') {
     return mockStore.getEngineStatus() as unknown as T;
   }
@@ -187,15 +299,42 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
     return { valid: true, timestamp: new Date().toISOString() } as unknown as T;
   }
 
-  // 4. Inventory
+  // --------------------------------------------------------------------------
+  // 4. INVENTORY (Engine 1: DBMS Concurrency & Engine 3: FEFO Expiry)
+  // --------------------------------------------------------------------------
   if (endpoint.startsWith('/inventory')) {
+    const parts = endpoint.split('/');
+
+    // 4a. Single unit: GET /inventory/:id
+    if (parts.length === 3 && parts[2] && options.method !== 'POST') {
+      const invId = parts[2];
+      if (sb) {
+        try {
+          const { data: singleUnit } = await sb.from('blood_inventory').select('*').eq('id', invId).single();
+          if (singleUnit) {
+            return {
+              ...singleUnit,
+              hospital_name: mockStore.hospitals.find(h => h.id === singleUnit.hospital_id)?.name || 'Hospital',
+              available_quantity: Math.max(0, (singleUnit.quantity_total || 0) - (singleUnit.quantity_held || 0) - (singleUnit.quantity_in_transit || 0)),
+              tier: singleUnit.expiry_tier || 'VALID',
+            } as unknown as T;
+          }
+        } catch {}
+      }
+      const localUnit = mockStore.inventory.find(i => i.id === invId);
+      if (localUnit) return localUnit as unknown as T;
+    }
+
+    // 4b. Add inventory: POST /inventory
     if (options.method === 'POST') {
       const data = options.body ? JSON.parse(options.body as string) : {};
-      const hospitalName = mockStore.hospitals.find(h => h.id === data.hospital_id)?.name || 'KLE Hospital';
+      const targetHospitalId = data.hospital_id || currentUser.hospital_id || 'H001';
+      const hospitalName = mockStore.hospitals.find(h => h.id === targetHospitalId)?.name || 'KLE Hospital';
       const qty = Number(data.quantity_total) || 5;
+
       const newUnit = {
         id: 'INV' + Date.now().toString().slice(-6),
-        hospital_id: data.hospital_id || 'H001',
+        hospital_id: targetHospitalId,
         hospital_name: hospitalName,
         blood_group: data.blood_group || 'O+',
         component: data.component || 'RBC',
@@ -213,6 +352,7 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
 
       if (sb) {
         try {
+          // 1. Insert into blood_inventory
           await sb.from('blood_inventory').insert([{
             id: newUnit.id,
             hospital_id: newUnit.hospital_id,
@@ -224,9 +364,39 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
             collection_date: newUnit.collection_date,
             expiry_date: newUnit.expiry_date,
             status: newUnit.status,
+            expiry_tier: 'VALID',
+            created_at: newUnit.created_at,
+            updated_at: newUnit.updated_at,
           }]);
+
+          // 2. Insert into inventory_movements (Engine 1 immutable double-entry ledger)
+          await sb.from('inventory_movements').insert([{
+            id: 'MOV_' + Date.now(),
+            inventory_id: newUnit.id,
+            movement_type: 'ADD',
+            quantity_change: newUnit.quantity_total,
+            reference_id: null,
+            performed_by: currentUser.id || 'U001',
+            notes: `Physical intake of ${newUnit.quantity_total} units ${newUnit.blood_group} ${newUnit.component}`,
+            created_at: new Date().toISOString(),
+          }]);
+
+          // 3. Log to audit_logs
+          await logAudit(
+            'ADD_INVENTORY',
+            'INVENTORY',
+            newUnit.id,
+            {
+              hospital_id: newUnit.hospital_id,
+              blood_group: newUnit.blood_group,
+              component: newUnit.component,
+              quantity: newUnit.quantity_total,
+              expiry_date: newUnit.expiry_date,
+            },
+            currentUser.id || 'U001'
+          );
         } catch (e) {
-          console.warn('[Supabase Insert Error]', e);
+          console.warn('[Supabase Insert Inventory Error]', e);
         }
       }
 
@@ -235,23 +405,30 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
       return newUnit as unknown as T;
     }
 
+    // 4c. List inventory: GET /inventory
     if (sb) {
       try {
         const { data: invData, error: invErr } = await sb.from('blood_inventory').select('*').order('created_at', { ascending: false });
-        if (!invErr && invData && invData.length > 0) {
+        if (!invErr && invData) {
           return invData.map((item: any) => ({
             ...item,
             hospital_name: mockStore.hospitals.find(h => h.id === item.hospital_id)?.name || 'Hospital',
             available_quantity: Math.max(0, (item.quantity_total || 0) - (item.quantity_held || 0) - (item.quantity_in_transit || 0)),
+            tier: item.expiry_tier || 'VALID',
           })) as unknown as T;
         }
-      } catch {}
+      } catch (err) {
+        console.warn('[Supabase Inventory Fetch Error]', err);
+      }
     }
     return mockStore.inventory as unknown as T;
   }
 
-  // 5. Requests
+  // --------------------------------------------------------------------------
+  // 5. REQUESTS (Engine 2: OS Priority Preemption & MLFQ Scheduler)
+  // --------------------------------------------------------------------------
   if (endpoint.startsWith('/requests')) {
+    // 5a. Update status: POST /requests/:id/status
     if (options.method === 'POST' && endpoint.includes('/status')) {
       const id = endpoint.split('/')[2];
       const data = options.body ? JSON.parse(options.body as string) : {};
@@ -260,39 +437,57 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
         req.status = data.status;
       }
       if (sb) {
-        try { await sb.from('blood_requests').update({ status: data.status }).eq('id', id); } catch {}
+        try {
+          await sb.from('blood_requests').update({
+            status: data.status,
+            updated_at: new Date().toISOString(),
+          }).eq('id', id);
+
+          await logAudit(
+            'UPDATE_REQUEST_STATUS',
+            'REQUEST',
+            id,
+            { status: data.status, notes: data.notes || '' },
+            currentUser.id || 'U002'
+          );
+        } catch (e) {
+          console.warn('[Supabase Status Update Error]', e);
+        }
       }
       mockStore.saveUserState();
       return { success: true } as unknown as T;
     }
 
+    // 5b. Create request: POST /requests
     if (options.method === 'POST') {
       const data = options.body ? JSON.parse(options.body as string) : {};
-      const hospitalName = mockStore.hospitals.find(h => h.id === data.requesting_hospital_id)?.name || 'District Hospital';
+      const targetHospitalId = data.requesting_hospital_id || currentUser.hospital_id || 'H002';
+      const hospitalName = mockStore.hospitals.find(h => h.id === targetHospitalId)?.name || 'District Hospital';
+      const reqPriority = data.priority || 'URGENT';
+      const baseScore = reqPriority === 'EMERGENCY' ? 100 : reqPriority === 'URGENT' ? 50 : 10;
+
       const newReq = {
         id: 'REQ' + Date.now().toString().slice(-6),
-        requesting_hospital_id: data.requesting_hospital_id || 'H002',
+        requesting_hospital_id: targetHospitalId,
         requesting_hospital_name: hospitalName,
-        priority: data.priority || 'URGENT',
+        priority: reqPriority,
         status: 'PENDING' as const,
-        required_by: new Date(Date.now() + 12 * 3600000).toISOString(),
+        required_by: data.required_by || new Date(Date.now() + 12 * 3600000).toISOString(),
         aging_points: 0,
         promoted_by_aging: false,
         preempted_count: 0,
         compensation_boost: 0,
-        effective_score: data.priority === 'EMERGENCY' ? 100 : data.priority === 'URGENT' ? 50 : 10,
+        effective_score: baseScore,
         items: (data.items && data.items.length > 0) ? data.items.map((it: any, i: number) => ({
           id: 'ITEM' + Date.now() + i,
-          request_id: 'REQ' + Date.now().toString().slice(-6),
           blood_group: it.blood_group || 'O+',
           component: it.component || 'RBC',
-          quantity: it.quantity || 2,
+          quantity: Number(it.quantity) || 2,
         })) : [{
           id: 'ITEM' + Date.now(),
-          request_id: 'REQ' + Date.now().toString().slice(-6),
-          blood_group: 'O+',
-          component: 'RBC',
-          quantity: 2,
+          blood_group: data.blood_group || 'O+',
+          component: data.component || 'RBC',
+          quantity: Number(data.quantity) || 2,
         }],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -300,6 +495,7 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
 
       if (sb) {
         try {
+          // 1. Insert directly into blood_requests (stores items directly in JSONB column!)
           await sb.from('blood_requests').insert([{
             id: newReq.id,
             requesting_hospital_id: newReq.requesting_hospital_id,
@@ -307,15 +503,43 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
             status: newReq.status,
             required_by: newReq.required_by,
             aging_points: 0,
+            promoted_by_aging: false,
+            preempted_count: 0,
             compensation_boost: 0,
+            items: newReq.items,
+            matches: [],
+            status_history: [{ status: 'PENDING', timestamp: new Date().toISOString(), by: currentUser.id || 'U002' }],
+            created_by: currentUser.id || 'U002',
+            created_at: newReq.created_at,
+            updated_at: newReq.updated_at,
           }]);
-          for (const it of newReq.items) {
-            await sb.from('request_items').insert([{
-              id: it.id,
-              request_id: newReq.id,
-              blood_group: it.blood_group,
-              component: it.component,
-              quantity: it.quantity,
+
+          // 2. Insert into audit_logs
+          await logAudit(
+            'CREATE_BLOOD_REQUEST',
+            'REQUEST',
+            newReq.id,
+            {
+              hospital_id: newReq.requesting_hospital_id,
+              priority: newReq.priority,
+              items: newReq.items,
+              required_by: newReq.required_by,
+            },
+            currentUser.id || 'U002'
+          );
+
+          // 3. If EMERGENCY, insert alert into alerts table
+          if (newReq.priority === 'EMERGENCY') {
+            await sb.from('alerts').insert([{
+              id: 'ALT_' + Date.now(),
+              severity: 'CRITICAL',
+              type: 'EMERGENCY_REQUEST',
+              entity_id: newReq.id,
+              hospital_id: newReq.requesting_hospital_id,
+              title: `EMERGENCY Demand: ${newReq.items[0]?.blood_group || 'O+'}`,
+              message: `${newReq.requesting_hospital_name} issued an EMERGENCY blood request for ${newReq.items[0]?.quantity || 2} units. OS MLFQ priority boost active.`,
+              is_acknowledged: false,
+              created_at: new Date().toISOString(),
             }]);
           }
         } catch (e) {
@@ -328,32 +552,66 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
       return newReq as unknown as T;
     }
 
-    if (sb) {
-      try {
-        const { data: reqData, error: reqErr } = await sb.from('blood_requests').select('*, request_items(*)').order('created_at', { ascending: false });
-        if (!reqErr && reqData && reqData.length > 0) {
-          return reqData.map((r: any) => ({
-            ...r,
-            requesting_hospital_name: mockStore.hospitals.find(h => h.id === r.requesting_hospital_id)?.name || 'Hospital',
-            items: r.request_items || [],
-            effective_score: (r.priority === 'EMERGENCY' ? 100 : r.priority === 'URGENT' ? 50 : 10) + (r.aging_points || 0) + (r.compensation_boost || 0),
-          })) as unknown as T;
-        }
-      } catch {}
+    // 5c. Single request: GET /requests/:id (not /matches)
+    const reqParts = endpoint.split('/');
+    if (reqParts.length === 3 && reqParts[2] && reqParts[2] !== 'matches') {
+      const reqId = reqParts[2];
+      if (sb) {
+        try {
+          const { data: singleReq } = await sb.from('blood_requests').select('*').eq('id', reqId).single();
+          if (singleReq) {
+            return {
+              ...singleReq,
+              requesting_hospital_name: mockStore.hospitals.find(h => h.id === singleReq.requesting_hospital_id)?.name || 'Hospital',
+              items: Array.isArray(singleReq.items) ? singleReq.items : (typeof singleReq.items === 'string' ? JSON.parse(singleReq.items) : []),
+              effective_score: (singleReq.priority === 'EMERGENCY' ? 100 : singleReq.priority === 'URGENT' ? 50 : 10) + (singleReq.aging_points || 0) + (singleReq.compensation_boost || 0),
+            } as unknown as T;
+          }
+        } catch {}
+      }
+      const localReq = mockStore.requests.find(r => r.id === reqId);
+      if (localReq) return localReq as unknown as T;
     }
 
+    // 5d. Request matches: GET /requests/:id/matches (Engine 4 Dijkstra + Engine 3 FEFO)
     if (endpoint.includes('/matches')) {
       const reqId = endpoint.split('/')[2];
-      const req = mockStore.requests.find(r => r.id === reqId);
+      let req = mockStore.requests.find(r => r.id === reqId);
+      let invList = mockStore.inventory;
+
+      if (sb) {
+        try {
+          const [rRes, iRes] = await Promise.all([
+            sb.from('blood_requests').select('*').eq('id', reqId).maybeSingle(),
+            sb.from('blood_inventory').select('*').gt('quantity_total', 0)
+          ]);
+          if (rRes.data) {
+            req = {
+              ...rRes.data,
+              items: Array.isArray(rRes.data.items) ? rRes.data.items : [],
+              requesting_hospital_name: mockStore.hospitals.find(h => h.id === rRes.data.requesting_hospital_id)?.name || 'Hospital',
+            } as any;
+          }
+          if (iRes.data && iRes.data.length > 0) {
+            invList = iRes.data.map((item: any) => ({
+              ...item,
+              hospital_name: mockStore.hospitals.find(h => h.id === item.hospital_id)?.name || 'Hospital',
+              available_quantity: Math.max(0, (item.quantity_total || 0) - (item.quantity_held || 0) - (item.quantity_in_transit || 0)),
+              tier: item.expiry_tier || 'VALID',
+            }));
+          }
+        } catch {}
+      }
+
       const reqGroup = req?.items[0]?.blood_group || 'O+';
       const reqComp = req?.items[0]?.component || 'RBC';
       const reqQty = req?.items[0]?.quantity || 2;
       const reqHospId = req?.requesting_hospital_id || 'H002';
 
       // Find compatible inventory in other hospitals (FEFO: sorted by closest expiry)
-      const compatibleUnits = mockStore.inventory
-        .filter(i => 
-          i.hospital_id !== reqHospId && 
+      const compatibleUnits = invList
+        .filter(i =>
+          i.hospital_id !== reqHospId &&
           i.available_quantity > 0 &&
           (i.blood_group === reqGroup || i.blood_group === 'O-') &&
           i.component === reqComp
@@ -391,7 +649,7 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
         }) as unknown as T;
       }
 
-      // Fallback default match
+      // Default academic match
       return [
         {
           hospital_id: 'H001',
@@ -419,83 +677,98 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
         }
       ] as unknown as T;
     }
+
+    // 5e. List all requests: GET /requests
+    if (sb) {
+      try {
+        const { data: reqData, error: reqErr } = await sb.from('blood_requests').select('*').order('created_at', { ascending: false });
+        if (!reqErr && reqData) {
+          return reqData.map((r: any) => ({
+            ...r,
+            requesting_hospital_name: mockStore.hospitals.find(h => h.id === r.requesting_hospital_id)?.name || 'Hospital',
+            items: Array.isArray(r.items) ? r.items : (typeof r.items === 'string' ? JSON.parse(r.items) : []),
+            effective_score: (r.priority === 'EMERGENCY' ? 100 : r.priority === 'URGENT' ? 50 : 10) + (r.aging_points || 0) + (r.compensation_boost || 0),
+          })) as unknown as T;
+        }
+      } catch (err) {
+        console.warn('[Supabase Requests Fetch Error]', err);
+      }
+    }
     return mockStore.requests as unknown as T;
   }
 
-  // 6. Transfers
+  // --------------------------------------------------------------------------
+  // 6. TRANSFERS (Engine 4: DSA Dijkstra Routing & Logistics)
+  // --------------------------------------------------------------------------
   if (endpoint.startsWith('/transfers')) {
-    // 6a. Confirm Receipt: /transfers/:id/receive
+    // 6a. Receive transfer: POST /transfers/:id/receive
     if (endpoint.includes('/receive') && options.method === 'POST') {
       const transferId = endpoint.split('/')[2];
       const transfer = mockStore.transfers.find(t => t.id === transferId);
-      if (transfer) {
-        transfer.status = 'RECEIVED';
-        transfer.received_at = new Date().toISOString();
+      const receivedAt = new Date().toISOString();
 
-        if (sb) {
-          try {
-            await sb.from('transfers').update({ status: 'RECEIVED', received_at: transfer.received_at }).eq('id', transferId);
-            const { data: invData } = await sb.from('blood_inventory').select('*').eq('id', transfer.inventory_id).single();
+      if (sb) {
+        try {
+          // 1. Update transfer status
+          await sb.from('transfers').update({ status: 'RECEIVED', received_at: receivedAt }).eq('id', transferId);
+
+          // 2. Fetch transfer row
+          const { data: trfRow } = await sb.from('transfers').select('*').eq('id', transferId).single();
+          const targetTrf = trfRow || transfer;
+
+          if (targetTrf) {
+            // Deduct source inventory
+            const { data: invData } = await sb.from('blood_inventory').select('*').eq('id', targetTrf.inventory_id).single();
             if (invData) {
               await sb.from('blood_inventory').update({
-                quantity_in_transit: Math.max(0, (invData.quantity_in_transit || 0) - transfer.quantity),
-                quantity_total: Math.max(0, invData.quantity_total - transfer.quantity),
-              }).eq('id', transfer.inventory_id);
+                quantity_in_transit: Math.max(0, (invData.quantity_in_transit || 0) - targetTrf.quantity),
+                quantity_total: Math.max(0, invData.quantity_total - targetTrf.quantity),
+              }).eq('id', targetTrf.inventory_id);
             }
-            await sb.from('blood_requests').update({ status: 'FULFILLED' }).eq('id', transfer.request_id);
-          } catch (e) {
-            console.warn('[Supabase Receive Sync Error]', e);
+
+            // Update request status to FULFILLED
+            await sb.from('blood_requests').update({ status: 'FULFILLED', updated_at: receivedAt }).eq('id', targetTrf.request_id);
+
+            // Record movement: TRANSFER_IN
+            await sb.from('inventory_movements').insert([{
+              id: 'MOV_' + Date.now(),
+              inventory_id: targetTrf.inventory_id,
+              movement_type: 'TRANSFER_IN',
+              quantity_change: targetTrf.quantity,
+              reference_id: transferId,
+              performed_by: currentUser.id || 'U002',
+              notes: `Logistics delivery complete: ${targetTrf.quantity} units received at ${targetTrf.destination_hospital_id}`,
+              created_at: receivedAt,
+            }]);
+
+            // Audit log
+            await logAudit(
+              'RECEIVE_TRANSFER',
+              'TRANSFER',
+              transferId,
+              {
+                source_hospital_id: targetTrf.source_hospital_id,
+                destination_hospital_id: targetTrf.destination_hospital_id,
+                quantity: targetTrf.quantity,
+                received_at: receivedAt,
+              },
+              currentUser.id || 'U002'
+            );
           }
+        } catch (e) {
+          console.warn('[Supabase Receive Sync Error]', e);
         }
+      }
 
-        // Source hospital: remove from in-transit & total
-        const sourceUnit = mockStore.inventory.find(i => i.id === transfer.inventory_id);
-        if (sourceUnit) {
-          sourceUnit.quantity_in_transit = Math.max(0, sourceUnit.quantity_in_transit - transfer.quantity);
-          sourceUnit.quantity_total = Math.max(0, sourceUnit.quantity_total - transfer.quantity);
-          sourceUnit.available_quantity = Math.max(0, sourceUnit.quantity_total - sourceUnit.quantity_held - sourceUnit.quantity_in_transit);
-        }
-
-        // Destination hospital: add transferred units
-        const bloodGrp = transfer.blood_group || sourceUnit?.blood_group || 'O+';
-        const comp = transfer.component || sourceUnit?.component || 'RBC';
-        const destUnit = mockStore.inventory.find(i =>
-          i.hospital_id === transfer.destination_hospital_id &&
-          i.blood_group === bloodGrp &&
-          i.component === comp
-        );
-
-        if (destUnit) {
-          destUnit.quantity_total += transfer.quantity;
-          destUnit.available_quantity = Math.max(0, destUnit.quantity_total - destUnit.quantity_held - destUnit.quantity_in_transit);
-        } else {
-          mockStore.inventory.unshift({
-            id: 'INV' + Date.now().toString().slice(-6),
-            hospital_id: transfer.destination_hospital_id,
-            hospital_name: transfer.destination_hospital_name || 'Destination Hospital',
-            blood_group: bloodGrp as any,
-            component: comp as any,
-            quantity_total: transfer.quantity,
-            quantity_held: 0,
-            quantity_in_transit: 0,
-            available_quantity: transfer.quantity,
-            collection_date: sourceUnit?.collection_date || new Date().toISOString().split('T')[0],
-            expiry_date: sourceUnit?.expiry_date || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
-            status: 'AVAILABLE',
-            tier: 'VALID',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
-        }
-
-        // Fulfill matching request
+      if (transfer) {
+        transfer.status = 'RECEIVED';
+        transfer.received_at = receivedAt;
         const req = mockStore.requests.find(r => r.id === transfer.request_id);
-        if (req) {
-          req.status = 'FULFILLED';
-        }
+        if (req) req.status = 'FULFILLED';
         mockStore.saveUserState();
       }
-      return { success: true, message: 'Transfer received and inventory synced' } as unknown as T;
+
+      return { success: true, message: 'Transfer received and inventory synchronized' } as unknown as T;
     }
 
     // 6b. Initiate Transfer: POST /transfers
@@ -512,7 +785,7 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
         source_hospital_name: sourceUnit ? (sourceUnit.hospital_name || 'KLE Hospital') : 'KLE Hospital',
         destination_hospital_id: req ? req.requesting_hospital_id : 'H002',
         destination_hospital_name: req ? (req.requesting_hospital_name || 'District Hospital') : 'District Hospital',
-        inventory_id: sourceUnit ? sourceUnit.id : 'INV001',
+        inventory_id: sourceUnit ? sourceUnit.id : (data.inventory_id || 'INV001'),
         blood_group: sourceUnit ? sourceUnit.blood_group : (req?.items[0]?.blood_group || 'O+'),
         component: sourceUnit ? sourceUnit.component : (req?.items[0]?.component || 'RBC'),
         quantity: transferQty,
@@ -520,6 +793,7 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
         status: 'IN_TRANSIT' as const,
         dispatched_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
 
       if (sb) {
@@ -534,31 +808,49 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
             priority: newTrf.priority,
             status: 'IN_TRANSIT',
             dispatched_at: newTrf.dispatched_at,
+            created_at: newTrf.created_at,
+            updated_at: newTrf.updated_at,
           }]);
-          const { data: invData } = await sb.from('blood_inventory').select('*').eq('id', data.inventory_id).single();
+
+          // Update source inventory quantity_in_transit
+          const { data: invData } = await sb.from('blood_inventory').select('*').eq('id', newTrf.inventory_id).single();
           if (invData) {
             await sb.from('blood_inventory').update({
               quantity_in_transit: (invData.quantity_in_transit || 0) + transferQty,
-            }).eq('id', data.inventory_id);
+            }).eq('id', newTrf.inventory_id);
           }
-          await sb.from('blood_requests').update({ status: 'IN_PROGRESS' }).eq('id', data.request_id);
+
+          // Update request status to IN_PROGRESS
+          await sb.from('blood_requests').update({ status: 'IN_PROGRESS', updated_at: newTrf.dispatched_at }).eq('id', newTrf.request_id);
+
+          // Record movement: TRANSFER_OUT
+          await sb.from('inventory_movements').insert([{
+            id: 'MOV_' + Date.now(),
+            inventory_id: newTrf.inventory_id,
+            movement_type: 'TRANSFER_OUT',
+            quantity_change: -transferQty,
+            reference_id: newTrf.id,
+            performed_by: currentUser.id || 'U001',
+            notes: `Dispatched ${transferQty} units from ${newTrf.source_hospital_id} to ${newTrf.destination_hospital_id}`,
+            created_at: newTrf.dispatched_at,
+          }]);
+
+          // Audit log
+          await logAudit(
+            'DISPATCH_TRANSFER',
+            'TRANSFER',
+            newTrf.id,
+            {
+              request_id: newTrf.request_id,
+              source: newTrf.source_hospital_id,
+              destination: newTrf.destination_hospital_id,
+              quantity: transferQty,
+            },
+            currentUser.id || 'U001'
+          );
         } catch (e) {
           console.warn('[Supabase Transfer Sync Error]', e);
         }
-      }
-
-      // Update source inventory: mark in-transit
-      if (sourceUnit) {
-        if (sourceUnit.quantity_held >= transferQty) {
-          sourceUnit.quantity_held -= transferQty;
-        }
-        sourceUnit.quantity_in_transit += transferQty;
-        sourceUnit.available_quantity = Math.max(0, sourceUnit.quantity_total - sourceUnit.quantity_held - sourceUnit.quantity_in_transit);
-      }
-
-      // Update request status
-      if (req) {
-        req.status = 'IN_PROGRESS';
       }
 
       mockStore.transfers.unshift(newTrf);
@@ -566,20 +858,61 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
       return newTrf as unknown as T;
     }
 
+    // 6c. List transfers: GET /transfers
     if (sb) {
       try {
         const { data: trfData, error: trfErr } = await sb.from('transfers').select('*').order('created_at', { ascending: false });
-        if (!trfErr && trfData && trfData.length > 0) return trfData as unknown as T;
+        if (!trfErr && trfData && trfData.length > 0) {
+          return trfData.map((t: any) => ({
+            ...t,
+            source_hospital_name: mockStore.hospitals.find(h => h.id === t.source_hospital_id)?.name || 'Source Hospital',
+            destination_hospital_name: mockStore.hospitals.find(h => h.id === t.destination_hospital_id)?.name || 'Destination Hospital',
+          })) as unknown as T;
+        }
       } catch {}
     }
     return mockStore.transfers as unknown as T;
   }
 
-  // 7. Expiry & Alerts
+  // --------------------------------------------------------------------------
+  // 7. EXPIRY & ALERTS (Engine 3: AI Expiry Replenishment & Critical Tiers)
+  // --------------------------------------------------------------------------
   if (endpoint.startsWith('/expiry/fefo')) {
+    if (sb) {
+      try {
+        const { data: fefoData } = await sb.from('blood_inventory').select('*').order('expiry_date', { ascending: true });
+        if (fefoData && fefoData.length > 0) {
+          return fefoData.map((item: any) => ({
+            ...item,
+            hospital_name: mockStore.hospitals.find(h => h.id === item.hospital_id)?.name || 'Hospital',
+            available_quantity: Math.max(0, (item.quantity_total || 0) - (item.quantity_held || 0) - (item.quantity_in_transit || 0)),
+            tier: item.expiry_tier || 'VALID',
+          })) as unknown as T;
+        }
+      } catch {}
+    }
     return mockStore.inventory as unknown as T;
   }
-  if (endpoint === '/alerts') {
+
+  if (endpoint.startsWith('/alerts')) {
+    if (endpoint.includes('/acknowledge') && options.method === 'POST') {
+      const id = endpoint.split('/')[2];
+      const alert = mockStore.alerts.find(a => a.id === id);
+      if (alert) alert.is_acknowledged = true;
+      if (sb) {
+        try {
+          await sb.from('alerts').update({
+            is_acknowledged: true,
+            acknowledged_by: currentUser.id || 'U006',
+            acknowledged_at: new Date().toISOString(),
+          }).eq('id', id);
+
+          await logAudit('ACKNOWLEDGE_ALERT', 'ALERT', id, { acknowledged_by: currentUser.id || 'U006' });
+        } catch {}
+      }
+      return { success: true } as unknown as T;
+    }
+
     if (sb) {
       try {
         const { data: aData } = await sb.from('alerts').select('*').order('created_at', { ascending: false });
@@ -588,17 +921,113 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
     }
     return mockStore.alerts as unknown as T;
   }
-  if (endpoint.includes('/acknowledge')) {
-    const id = endpoint.split('/')[2];
-    const alert = mockStore.alerts.find(a => a.id === id);
-    if (alert) alert.is_acknowledged = true;
+
+  // --------------------------------------------------------------------------
+  // 8. AUDIT LOGS (Compliance & Security Trail)
+  // --------------------------------------------------------------------------
+  if (endpoint === '/audit-logs') {
     if (sb) {
-      try { await sb.from('alerts').update({ is_acknowledged: true }).eq('id', id); } catch {}
+      try {
+        const { data: logsData, error: logsErr } = await sb.from('audit_logs').select('*').order('timestamp', { ascending: false }).limit(100);
+        if (!logsErr && logsData && logsData.length > 0) {
+          return logsData as unknown as T;
+        }
+      } catch {}
     }
-    return { success: true } as unknown as T;
+    return [
+      { id: 'LOG_INIT', user_id: 'U006', action: 'SYSTEM_STARTUP', entity_type: 'SYSTEM', entity_id: 'SYS', details: { message: 'Audit trail live' }, timestamp: new Date().toISOString() }
+    ] as unknown as T;
   }
 
-  // 8. Simulation & Scenarios
+  // --------------------------------------------------------------------------
+  // 9. SYSTEM RECORDS INSPECTOR (Exact 10 Merged Tables)
+  // --------------------------------------------------------------------------
+  if (endpoint === '/database/tables') {
+    if (sb) {
+      try {
+        const [h, u, d, inv, holds, mov, reqs, tr, al, logs] = await Promise.all([
+          sb.from('hospitals').select('*').order('id'),
+          sb.from('users').select('id, name, email, role, hospital_id, status, created_at, updated_at').order('id'),
+          sb.from('hospital_distances').select('*'),
+          sb.from('blood_inventory').select('*').order('created_at', { ascending: false }),
+          sb.from('inventory_holds').select('*').order('created_at', { ascending: false }),
+          sb.from('inventory_movements').select('*').order('created_at', { ascending: false }),
+          sb.from('blood_requests').select('*').order('created_at', { ascending: false }),
+          sb.from('transfers').select('*').order('created_at', { ascending: false }),
+          sb.from('alerts').select('*').order('created_at', { ascending: false }),
+          sb.from('audit_logs').select('*').order('timestamp', { ascending: false }).limit(100),
+        ]);
+
+        return {
+          provider: 'Supabase PostgreSQL (Live Connected)',
+          tables: [
+            { name: 'hospitals', count: h.data?.length || 0, data: h.data || [] },
+            { name: 'users', count: u.data?.length || 0, data: u.data || [] },
+            { name: 'hospital_distances', count: d.data?.length || 0, data: d.data || [] },
+            { name: 'blood_inventory', count: inv.data?.length || 0, data: inv.data || [] },
+            { name: 'inventory_holds', count: holds.data?.length || 0, data: holds.data || [] },
+            { name: 'inventory_movements', count: mov.data?.length || 0, data: mov.data || [] },
+            { name: 'blood_requests', count: reqs.data?.length || 0, data: reqs.data || [] },
+            { name: 'transfers', count: tr.data?.length || 0, data: tr.data || [] },
+            { name: 'alerts', count: al.data?.length || 0, data: al.data || [] },
+            { name: 'audit_logs', count: logs.data?.length || 0, data: logs.data || [] },
+          ],
+        } as unknown as T;
+      } catch (e) {
+        console.warn('[Supabase Database Tables Inspector Error]:', e);
+      }
+    }
+
+    return {
+      provider: 'High-Performance Demo Store',
+      tables: [
+        { name: 'hospitals', count: mockStore.hospitals.length, data: mockStore.hospitals },
+        { name: 'users', count: mockStore.users.length, data: mockStore.users },
+        { name: 'hospital_distances', count: 6, data: [] },
+        { name: 'blood_inventory', count: mockStore.inventory.length, data: mockStore.inventory },
+        { name: 'inventory_holds', count: 0, data: [] },
+        { name: 'inventory_movements', count: 0, data: [] },
+        { name: 'blood_requests', count: mockStore.requests.length, data: mockStore.requests },
+        { name: 'transfers', count: mockStore.transfers.length, data: mockStore.transfers },
+        { name: 'alerts', count: mockStore.alerts.length, data: mockStore.alerts },
+        { name: 'audit_logs', count: 1, data: [] },
+      ],
+    } as unknown as T;
+  }
+
+  // --------------------------------------------------------------------------
+  // 10. DATABASE ERASE (Keep Reference Hospitals & Users, Wipe Operations)
+  // --------------------------------------------------------------------------
+  if (endpoint === '/database/erase') {
+    if (sb) {
+      try {
+        await Promise.all([
+          sb.from('alerts').delete().neq('id', 'NONE'),
+          sb.from('inventory_movements').delete().neq('id', 'NONE'),
+          sb.from('inventory_holds').delete().neq('id', 'NONE'),
+          sb.from('transfers').delete().neq('id', 'NONE'),
+          sb.from('blood_requests').delete().neq('id', 'NONE'),
+          sb.from('blood_inventory').delete().neq('id', 'NONE'),
+        ]);
+
+        await logAudit(
+          'DATABASE_ERASED',
+          'SYSTEM',
+          'SYS',
+          { message: 'Database wiped clean of operational records. Hospital nodes and user accounts preserved.' },
+          currentUser.id || 'U006'
+        );
+      } catch (e) {
+        console.warn('[Supabase Database Erase Error]:', e);
+      }
+    }
+    mockStore.purgeFakeData();
+    return { success: true, message: 'Database successfully wiped clean in Supabase! Operational tables are at 0 records.' } as unknown as T;
+  }
+
+  // --------------------------------------------------------------------------
+  // 11. SIMULATION & SCENARIOS
+  // --------------------------------------------------------------------------
   if (endpoint === '/sim/scenarios') {
     return mockStore.runAllScenarios() as unknown as T;
   }
@@ -614,37 +1043,12 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
     mockStore.offsetHours = 0;
     return { success: true } as unknown as T;
   }
-
-  // 9. Database Viewer
-  if (endpoint === '/database/tables') {
-    if (sb) {
-      try {
-        const [hRes, iRes, rRes, tRes, aRes] = await Promise.all([
-          sb.from('hospitals').select('*'),
-          sb.from('blood_inventory').select('*'),
-          sb.from('blood_requests').select('*'),
-          sb.from('transfers').select('*'),
-          sb.from('alerts').select('*'),
-        ]);
-
-        return {
-          hospitals: hRes.data && hRes.data.length > 0 ? hRes.data : mockStore.hospitals,
-          users: mockStore.users,
-          inventory: iRes.data && iRes.data.length > 0 ? iRes.data : mockStore.inventory,
-          requests: rRes.data && rRes.data.length > 0 ? rRes.data : mockStore.requests,
-          transfers: tRes.data && tRes.data.length > 0 ? tRes.data : mockStore.transfers,
-          alerts: aRes.data && aRes.data.length > 0 ? aRes.data : mockStore.alerts,
-        } as unknown as T;
-      } catch {}
-    }
-
+  if (endpoint.startsWith('/reports/')) {
+    const type = endpoint.split('/')[2];
     return {
-      hospitals: mockStore.hospitals,
-      users: mockStore.users,
-      inventory: mockStore.inventory,
-      requests: mockStore.requests,
-      transfers: mockStore.transfers,
-      alerts: mockStore.alerts,
+      type,
+      generated_at: new Date().toISOString(),
+      summary: { total_inventory: mockStore.inventory.length, active_requests: mockStore.requests.length, transfers: mockStore.transfers.length }
     } as unknown as T;
   }
 
