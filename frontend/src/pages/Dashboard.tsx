@@ -5,6 +5,7 @@ import { PriorityBadge } from '../components/PriorityBadge.js';
 import { EngineWorkflowModal, EngineId } from '../components/EngineWorkflowModal.js';
 import { MatchAndExpiryVisualizer } from '../components/MatchAndExpiryVisualizer.js';
 import { AIDonorPredictor } from '../components/AIDonorPredictor.js';
+import { PrioritySchedulingVisualizer } from '../components/PrioritySchedulingVisualizer.js';
 import { Link } from 'react-router-dom';
 import {
   BarChart,
@@ -574,67 +575,7 @@ export const Dashboard: React.FC = () => {
           )}
 
           {activeVisualEngine === 'priority-scheduling' && (
-            <div className="bg-[#090d16] border border-zinc-800 rounded-3xl p-6 shadow-2xl space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-800">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-teal-400 animate-pulse" />
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-teal-400">
-                      IN-PAGE VISUAL WORKSPACE
-                    </span>
-                  </div>
-                  <h3 className="text-xl font-black text-white tracking-tight mt-1 flex items-center gap-2">
-                    <Layers className="w-6 h-6 text-teal-400" />
-                    Priority scheduling engine: 3-Lane MLFQ Visualizer
-                  </h3>
-                  <p className="text-xs text-zinc-400 mt-0.5">
-                    Multilevel Feedback Queues with dynamic aging points and trauma emergency preemption.
-                  </p>
-                </div>
-
-                <button
-                  onClick={handleTriggerPreemption}
-                  disabled={mlfqRunning}
-                  className="bg-teal-500 hover:bg-teal-400 text-black font-black px-5 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-teal-500/20 transition disabled:opacity-50"
-                >
-                  <Flame className="w-4 h-4 fill-black" />
-                  <span>Simulate Code-Red Trauma Preemption (+15 Boost)</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-rose-950/30 border border-rose-800/60 p-4 rounded-xl">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-black text-rose-300 uppercase font-mono">LANE 0: EMERGENCY</span>
-                    <span className="text-[10px] font-mono bg-rose-900 text-rose-200 px-1.5 py-0.5 rounded">BASE 100</span>
-                  </div>
-                  <div className="text-xs text-zinc-300 font-mono">Immediate Preemption Enabled</div>
-                  <div className="text-[11px] text-rose-400 mt-2 font-bold">Priority Boost: +10 / tick</div>
-                </div>
-
-                <div className="bg-amber-950/30 border border-amber-800/60 p-4 rounded-xl">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-black text-amber-300 uppercase font-mono">LANE 1: URGENT</span>
-                    <span className="text-[10px] font-mono bg-amber-900 text-amber-200 px-1.5 py-0.5 rounded">BASE 50</span>
-                  </div>
-                  <div className="text-xs text-zinc-300 font-mono">Surgical & ICU Reservations</div>
-                  <div className="text-[11px] text-amber-400 mt-2 font-bold">Priority Boost: +2 / tick</div>
-                </div>
-
-                <div className="bg-slate-900/60 border border-slate-700/60 p-4 rounded-xl">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-black text-slate-300 uppercase font-mono">LANE 2: ROUTINE</span>
-                    <span className="text-[10px] font-mono bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">BASE 10</span>
-                  </div>
-                  <div className="text-xs text-zinc-300 font-mono">Elective Scheduled Operations</div>
-                  <div className="text-[11px] text-slate-400 mt-2 font-bold">Aging: +1 / tick (No Starvation)</div>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-black border border-zinc-800 font-mono text-xs text-teal-300">
-                &gt; {mlfqLog}
-              </div>
-            </div>
+            <PrioritySchedulingVisualizer />
           )}
 
           {activeVisualEngine === 'web-engine' && (
