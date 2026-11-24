@@ -1,4 +1,5 @@
 import { mockStore } from './mockStore.js';
+import { getSupabaseClient } from './supabase.js';
 
 export const API_BASE = (import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api');
 
@@ -33,32 +34,84 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
     const contentType = response.headers.get('content-type') || '';
 
-    // If server returned non-OK, or returned HTML (static SPA index.html), use mock fallback
+    // If server returned non-OK, or returned HTML (static SPA index.html), use live Supabase or mock fallback
     if (!response.ok || contentType.includes('text/html') || response.status === 405 || response.status === 404) {
-      return handleMockFallback<T>(endpoint, options);
+      return await handleMockFallback<T>(endpoint, options);
     }
 
     const text = await response.text();
     try {
       return JSON.parse(text) as T;
     } catch {
-      return handleMockFallback<T>(endpoint, options);
+      return await handleMockFallback<T>(endpoint, options);
     }
   } catch (err: any) {
-    return handleMockFallback<T>(endpoint, options);
+    return await handleMockFallback<T>(endpoint, options);
   }
 }
 
-function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
+async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const sb = getSupabaseClient();
+
   // 1. Auth
   if (endpoint === '/auth/login') {
     const body = options.body ? JSON.parse(options.body as string) : {};
+    if (sb) {
+      try {
+        const { data: userRow } = await sb.from('users').select('*').eq('email', (body.email || '').toLowerCase()).single();
+        if (userRow) {
+          const token = 'supabase-jwt-' + userRow.id;
+          const userObj = {
+            id: userRow.id,
+            name: userRow.name,
+            email: userRow.email,
+            role: userRow.role,
+            hospital_id: userRow.hospital_id,
+            hospital_name: mockStore.hospitals.find(h => h.id === userRow.hospital_id)?.name || 'KLE Hospital',
+            status: userRow.status,
+          };
+          localStorage.setItem('demo_user', JSON.stringify(userObj));
+          return { token, user: userObj } as unknown as T;
+        }
+      } catch {}
+    }
     return mockStore.login(body) as unknown as T;
   }
+
   if (endpoint === '/auth/register') {
     const body = options.body ? JSON.parse(options.body as string) : {};
+    if (sb) {
+      try {
+        const newUserId = 'U' + Date.now().toString().slice(-4);
+        const { data: createdUser } = await sb.from('users').insert([{
+          id: newUserId,
+          name: body.name || 'Medical Officer',
+          email: body.email,
+          role: body.role || 'HOSPITAL_ADMIN',
+          hospital_id: body.hospital_id || 'H001',
+          password_hash: 'demo123',
+          status: 'ACTIVE',
+        }]).select().single();
+
+        if (createdUser) {
+          const token = 'supabase-jwt-' + createdUser.id;
+          const userObj = {
+            id: createdUser.id,
+            name: createdUser.name,
+            email: createdUser.email,
+            role: createdUser.role,
+            hospital_id: createdUser.hospital_id,
+            hospital_name: mockStore.hospitals.find(h => h.id === createdUser.hospital_id)?.name || 'Hospital',
+            status: createdUser.status,
+          };
+          localStorage.setItem('demo_user', JSON.stringify(userObj));
+          return { token, user: userObj } as unknown as T;
+        }
+      } catch {}
+    }
     return mockStore.register(body) as unknown as T;
   }
+
   if (endpoint === '/auth/me') {
     return mockStore.getCurrentUser() as unknown as T;
   }
@@ -76,12 +129,31 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
         status: 'ACTIVE' as const,
         created_at: new Date().toISOString(),
       };
+      if (sb) {
+        try { await sb.from('hospitals').insert([newHosp]); } catch {}
+      }
       mockStore.hospitals.push(newHosp);
       return newHosp as unknown as T;
     }
+
+    if (sb) {
+      try {
+        const { data: hospData, error: hospErr } = await sb.from('hospitals').select('*');
+        if (!hospErr && hospData && hospData.length > 0) {
+          return hospData as unknown as T;
+        }
+      } catch {}
+    }
     return mockStore.hospitals as unknown as T;
   }
+
   if (endpoint === '/users') {
+    if (sb) {
+      try {
+        const { data: uData, error: uErr } = await sb.from('users').select('*');
+        if (!uErr && uData && uData.length > 0) return uData as unknown as T;
+      } catch {}
+    }
     return mockStore.users as unknown as T;
   }
 
@@ -122,7 +194,7 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
       const hospitalName = mockStore.hospitals.find(h => h.id === data.hospital_id)?.name || 'KLE Hospital';
       const qty = Number(data.quantity_total) || 5;
       const newUnit = {
-        id: 'INV' + (mockStore.inventory.length + 1).toString().padStart(3, '0'),
+        id: 'INV' + Date.now().toString().slice(-6),
         hospital_id: data.hospital_id || 'H001',
         hospital_name: hospitalName,
         blood_group: data.blood_group || 'O+',
@@ -138,8 +210,42 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
+
+      if (sb) {
+        try {
+          await sb.from('blood_inventory').insert([{
+            id: newUnit.id,
+            hospital_id: newUnit.hospital_id,
+            blood_group: newUnit.blood_group,
+            component: newUnit.component,
+            quantity_total: newUnit.quantity_total,
+            quantity_held: 0,
+            quantity_in_transit: 0,
+            collection_date: newUnit.collection_date,
+            expiry_date: newUnit.expiry_date,
+            status: newUnit.status,
+          }]);
+        } catch (e) {
+          console.warn('[Supabase Insert Error]', e);
+        }
+      }
+
       mockStore.inventory.unshift(newUnit);
+      mockStore.saveUserState();
       return newUnit as unknown as T;
+    }
+
+    if (sb) {
+      try {
+        const { data: invData, error: invErr } = await sb.from('blood_inventory').select('*').order('created_at', { ascending: false });
+        if (!invErr && invData && invData.length > 0) {
+          return invData.map((item: any) => ({
+            ...item,
+            hospital_name: mockStore.hospitals.find(h => h.id === item.hospital_id)?.name || 'Hospital',
+            available_quantity: Math.max(0, (item.quantity_total || 0) - (item.quantity_held || 0) - (item.quantity_in_transit || 0)),
+          })) as unknown as T;
+        }
+      } catch {}
     }
     return mockStore.inventory as unknown as T;
   }
@@ -153,13 +259,18 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
       if (req && data.status) {
         req.status = data.status;
       }
+      if (sb) {
+        try { await sb.from('blood_requests').update({ status: data.status }).eq('id', id); } catch {}
+      }
+      mockStore.saveUserState();
       return { success: true } as unknown as T;
     }
+
     if (options.method === 'POST') {
       const data = options.body ? JSON.parse(options.body as string) : {};
       const hospitalName = mockStore.hospitals.find(h => h.id === data.requesting_hospital_id)?.name || 'District Hospital';
       const newReq = {
-        id: 'REQ' + (mockStore.requests.length + 1).toString().padStart(3, '0'),
+        id: 'REQ' + Date.now().toString().slice(-6),
         requesting_hospital_id: data.requesting_hospital_id || 'H002',
         requesting_hospital_name: hospitalName,
         priority: data.priority || 'URGENT',
@@ -169,16 +280,16 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
         promoted_by_aging: false,
         preempted_count: 0,
         compensation_boost: 0,
-        effective_score: data.priority === 'EMERGENCY' ? 95 : data.priority === 'URGENT' ? 70 : 40,
+        effective_score: data.priority === 'EMERGENCY' ? 100 : data.priority === 'URGENT' ? 50 : 10,
         items: (data.items && data.items.length > 0) ? data.items.map((it: any, i: number) => ({
           id: 'ITEM' + Date.now() + i,
-          request_id: 'REQ' + (mockStore.requests.length + 1).toString().padStart(3, '0'),
+          request_id: 'REQ' + Date.now().toString().slice(-6),
           blood_group: it.blood_group || 'O+',
           component: it.component || 'RBC',
           quantity: it.quantity || 2,
         })) : [{
           id: 'ITEM' + Date.now(),
-          request_id: 'REQ' + (mockStore.requests.length + 1).toString().padStart(3, '0'),
+          request_id: 'REQ' + Date.now().toString().slice(-6),
           blood_group: 'O+',
           component: 'RBC',
           quantity: 2,
@@ -186,9 +297,51 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
+
+      if (sb) {
+        try {
+          await sb.from('blood_requests').insert([{
+            id: newReq.id,
+            requesting_hospital_id: newReq.requesting_hospital_id,
+            priority: newReq.priority,
+            status: newReq.status,
+            required_by: newReq.required_by,
+            aging_points: 0,
+            compensation_boost: 0,
+          }]);
+          for (const it of newReq.items) {
+            await sb.from('request_items').insert([{
+              id: it.id,
+              request_id: newReq.id,
+              blood_group: it.blood_group,
+              component: it.component,
+              quantity: it.quantity,
+            }]);
+          }
+        } catch (e) {
+          console.warn('[Supabase Insert Request Error]', e);
+        }
+      }
+
       mockStore.requests.unshift(newReq);
+      mockStore.saveUserState();
       return newReq as unknown as T;
     }
+
+    if (sb) {
+      try {
+        const { data: reqData, error: reqErr } = await sb.from('blood_requests').select('*, request_items(*)').order('created_at', { ascending: false });
+        if (!reqErr && reqData && reqData.length > 0) {
+          return reqData.map((r: any) => ({
+            ...r,
+            requesting_hospital_name: mockStore.hospitals.find(h => h.id === r.requesting_hospital_id)?.name || 'Hospital',
+            items: r.request_items || [],
+            effective_score: (r.priority === 'EMERGENCY' ? 100 : r.priority === 'URGENT' ? 50 : 10) + (r.aging_points || 0) + (r.compensation_boost || 0),
+          })) as unknown as T;
+        }
+      } catch {}
+    }
+
     if (endpoint.includes('/matches')) {
       const reqId = endpoint.split('/')[2];
       const req = mockStore.requests.find(r => r.id === reqId);
@@ -279,6 +432,22 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
         transfer.status = 'RECEIVED';
         transfer.received_at = new Date().toISOString();
 
+        if (sb) {
+          try {
+            await sb.from('transfers').update({ status: 'RECEIVED', received_at: transfer.received_at }).eq('id', transferId);
+            const { data: invData } = await sb.from('blood_inventory').select('*').eq('id', transfer.inventory_id).single();
+            if (invData) {
+              await sb.from('blood_inventory').update({
+                quantity_in_transit: Math.max(0, (invData.quantity_in_transit || 0) - transfer.quantity),
+                quantity_total: Math.max(0, invData.quantity_total - transfer.quantity),
+              }).eq('id', transfer.inventory_id);
+            }
+            await sb.from('blood_requests').update({ status: 'FULFILLED' }).eq('id', transfer.request_id);
+          } catch (e) {
+            console.warn('[Supabase Receive Sync Error]', e);
+          }
+        }
+
         // Source hospital: remove from in-transit & total
         const sourceUnit = mockStore.inventory.find(i => i.id === transfer.inventory_id);
         if (sourceUnit) {
@@ -301,7 +470,7 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
           destUnit.available_quantity = Math.max(0, destUnit.quantity_total - destUnit.quantity_held - destUnit.quantity_in_transit);
         } else {
           mockStore.inventory.unshift({
-            id: 'INV' + (mockStore.inventory.length + 1).toString().padStart(3, '0'),
+            id: 'INV' + Date.now().toString().slice(-6),
             hospital_id: transfer.destination_hospital_id,
             hospital_name: transfer.destination_hospital_name || 'Destination Hospital',
             blood_group: bloodGrp as any,
@@ -324,6 +493,7 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
         if (req) {
           req.status = 'FULFILLED';
         }
+        mockStore.saveUserState();
       }
       return { success: true, message: 'Transfer received and inventory synced' } as unknown as T;
     }
@@ -334,6 +504,48 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
       const sourceUnit = mockStore.inventory.find(i => i.id === data.inventory_id);
       const req = mockStore.requests.find(r => r.id === data.request_id);
       const transferQty = Number(data.quantity) || 2;
+
+      const newTrf = {
+        id: 'TRF' + Date.now().toString().slice(-6),
+        request_id: req ? req.id : (data.request_id || 'REQ001'),
+        source_hospital_id: sourceUnit ? sourceUnit.hospital_id : 'H001',
+        source_hospital_name: sourceUnit ? (sourceUnit.hospital_name || 'KLE Hospital') : 'KLE Hospital',
+        destination_hospital_id: req ? req.requesting_hospital_id : 'H002',
+        destination_hospital_name: req ? (req.requesting_hospital_name || 'District Hospital') : 'District Hospital',
+        inventory_id: sourceUnit ? sourceUnit.id : 'INV001',
+        blood_group: sourceUnit ? sourceUnit.blood_group : (req?.items[0]?.blood_group || 'O+'),
+        component: sourceUnit ? sourceUnit.component : (req?.items[0]?.component || 'RBC'),
+        quantity: transferQty,
+        priority: req ? req.priority : 'URGENT',
+        status: 'IN_TRANSIT' as const,
+        dispatched_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      };
+
+      if (sb) {
+        try {
+          await sb.from('transfers').insert([{
+            id: newTrf.id,
+            request_id: newTrf.request_id,
+            source_hospital_id: newTrf.source_hospital_id,
+            destination_hospital_id: newTrf.destination_hospital_id,
+            inventory_id: newTrf.inventory_id,
+            quantity: newTrf.quantity,
+            priority: newTrf.priority,
+            status: 'IN_TRANSIT',
+            dispatched_at: newTrf.dispatched_at,
+          }]);
+          const { data: invData } = await sb.from('blood_inventory').select('*').eq('id', data.inventory_id).single();
+          if (invData) {
+            await sb.from('blood_inventory').update({
+              quantity_in_transit: (invData.quantity_in_transit || 0) + transferQty,
+            }).eq('id', data.inventory_id);
+          }
+          await sb.from('blood_requests').update({ status: 'IN_PROGRESS' }).eq('id', data.request_id);
+        } catch (e) {
+          console.warn('[Supabase Transfer Sync Error]', e);
+        }
+      }
 
       // Update source inventory: mark in-transit
       if (sourceUnit) {
@@ -349,24 +561,16 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
         req.status = 'IN_PROGRESS';
       }
 
-      const newTrf = {
-        id: 'TRF' + (mockStore.transfers.length + 1).toString().padStart(3, '0'),
-        request_id: req ? req.id : (data.request_id || 'REQ001'),
-        source_hospital_id: sourceUnit ? sourceUnit.hospital_id : 'H001',
-        source_hospital_name: sourceUnit ? (sourceUnit.hospital_name || 'KLE Hospital') : 'KLE Hospital',
-        destination_hospital_id: req ? req.requesting_hospital_id : 'H002',
-        destination_hospital_name: req ? (req.requesting_hospital_name || 'District Hospital') : 'District Hospital',
-        inventory_id: sourceUnit ? sourceUnit.id : 'INV001',
-        blood_group: sourceUnit ? sourceUnit.blood_group : (req?.items[0]?.blood_group || 'O+'),
-        component: sourceUnit ? sourceUnit.component : (req?.items[0]?.component || 'RBC'),
-        quantity: transferQty,
-        priority: req ? req.priority : 'URGENT',
-        status: 'IN_TRANSIT' as const,
-        dispatched_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-      };
       mockStore.transfers.unshift(newTrf);
+      mockStore.saveUserState();
       return newTrf as unknown as T;
+    }
+
+    if (sb) {
+      try {
+        const { data: trfData, error: trfErr } = await sb.from('transfers').select('*').order('created_at', { ascending: false });
+        if (!trfErr && trfData && trfData.length > 0) return trfData as unknown as T;
+      } catch {}
     }
     return mockStore.transfers as unknown as T;
   }
@@ -376,12 +580,21 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
     return mockStore.inventory as unknown as T;
   }
   if (endpoint === '/alerts') {
+    if (sb) {
+      try {
+        const { data: aData } = await sb.from('alerts').select('*').order('created_at', { ascending: false });
+        if (aData && aData.length > 0) return aData as unknown as T;
+      } catch {}
+    }
     return mockStore.alerts as unknown as T;
   }
   if (endpoint.includes('/acknowledge')) {
     const id = endpoint.split('/')[2];
     const alert = mockStore.alerts.find(a => a.id === id);
     if (alert) alert.is_acknowledged = true;
+    if (sb) {
+      try { await sb.from('alerts').update({ is_acknowledged: true }).eq('id', id); } catch {}
+    }
     return { success: true } as unknown as T;
   }
 
@@ -404,6 +617,27 @@ function handleMockFallback<T>(endpoint: string, options: RequestInit = {}): T {
 
   // 9. Database Viewer
   if (endpoint === '/database/tables') {
+    if (sb) {
+      try {
+        const [hRes, iRes, rRes, tRes, aRes] = await Promise.all([
+          sb.from('hospitals').select('*'),
+          sb.from('blood_inventory').select('*'),
+          sb.from('blood_requests').select('*'),
+          sb.from('transfers').select('*'),
+          sb.from('alerts').select('*'),
+        ]);
+
+        return {
+          hospitals: hRes.data && hRes.data.length > 0 ? hRes.data : mockStore.hospitals,
+          users: mockStore.users,
+          inventory: iRes.data && iRes.data.length > 0 ? iRes.data : mockStore.inventory,
+          requests: rRes.data && rRes.data.length > 0 ? rRes.data : mockStore.requests,
+          transfers: tRes.data && tRes.data.length > 0 ? tRes.data : mockStore.transfers,
+          alerts: aRes.data && aRes.data.length > 0 ? aRes.data : mockStore.alerts,
+        } as unknown as T;
+      } catch {}
+    }
+
     return {
       hospitals: mockStore.hospitals,
       users: mockStore.users,

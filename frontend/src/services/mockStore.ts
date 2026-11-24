@@ -198,12 +198,71 @@ export const MOCK_ALERTS: Alert[] = [
 export class MockDataStore {
   hospitals = [...MOCK_HOSPITALS];
   users = [...MOCK_USERS];
-  inventory = [...MOCK_INVENTORY];
-  requests = [...MOCK_REQUESTS];
-  transfers = [...MOCK_TRANSFERS];
-  alerts = [...MOCK_ALERTS];
+  inventory: BloodUnit[] = [];
+  requests: BloodRequest[] = [];
+  transfers: Transfer[] = [];
+  alerts: Alert[] = [];
   offsetHours = 0;
   enginePaused = { 'inventory-sync': false, 'priority-scheduling': false, 'web-engine': false, 'match-expiry': false };
+
+  constructor() {
+    this.initStore();
+  }
+
+  initStore() {
+    const isPurged = typeof window !== 'undefined' && localStorage.getItem('purged_fake_data') === 'true';
+    if (isPurged) {
+      // Clean mode: Load only user-created data from localStorage
+      const savedInv = typeof window !== 'undefined' ? localStorage.getItem('user_inventory') : null;
+      const savedReq = typeof window !== 'undefined' ? localStorage.getItem('user_requests') : null;
+      const savedTrf = typeof window !== 'undefined' ? localStorage.getItem('user_transfers') : null;
+      this.inventory = savedInv ? JSON.parse(savedInv) : [];
+      this.requests = savedReq ? JSON.parse(savedReq) : [];
+      this.transfers = savedTrf ? JSON.parse(savedTrf) : [];
+      this.alerts = [];
+    } else {
+      // Seed default demo data
+      this.inventory = [...MOCK_INVENTORY];
+      this.requests = [...MOCK_REQUESTS];
+      this.transfers = [...MOCK_TRANSFERS];
+      this.alerts = [...MOCK_ALERTS];
+    }
+  }
+
+  hasPurgedData(): boolean {
+    return typeof window !== 'undefined' && localStorage.getItem('purged_fake_data') === 'true';
+  }
+
+  purgeFakeData() {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('purged_fake_data', 'true');
+      this.inventory = [];
+      this.requests = [];
+      this.transfers = [];
+      this.alerts = [];
+      localStorage.removeItem('user_inventory');
+      localStorage.removeItem('user_requests');
+      localStorage.removeItem('user_transfers');
+    }
+  }
+
+  restoreDefaultData() {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('purged_fake_data');
+      this.inventory = [...MOCK_INVENTORY];
+      this.requests = [...MOCK_REQUESTS];
+      this.transfers = [...MOCK_TRANSFERS];
+      this.alerts = [...MOCK_ALERTS];
+    }
+  }
+
+  saveUserState() {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user_inventory', JSON.stringify(this.inventory));
+      localStorage.setItem('user_requests', JSON.stringify(this.requests));
+      localStorage.setItem('user_transfers', JSON.stringify(this.transfers));
+    }
+  }
 
   login(credentials: { email: string; password?: string }) {
     const user = this.users.find(u => u.email.toLowerCase() === (credentials.email || '').toLowerCase()) || this.users[0];

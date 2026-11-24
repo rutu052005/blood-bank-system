@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.js';
 import { useSimClock } from '../context/SimClockContext.js';
-import { Bell, Clock, LogOut, FastForward, RotateCcw, Droplets } from 'lucide-react';
+import { Bell, Clock, LogOut, FastForward, RotateCcw, Droplets, Database } from 'lucide-react';
 import { api } from '../services/api.js';
 import { Alert } from '../types/index.js';
 import { Link } from 'react-router-dom';
+import { SupabaseSyncModal } from './SupabaseSyncModal.js';
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const { simTime, offsetHours, sseConnected, advanceTime, resetTime } = useSimClock();
   const [criticalCount, setCriticalCount] = useState<number>(0);
+  const [showSupabaseModal, setShowSupabaseModal] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchAlerts = () => {
@@ -101,7 +103,19 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* SSE & User Section */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {/* Supabase Live Status / Configuration Trigger */}
+          <button
+            onClick={() => setShowSupabaseModal(true)}
+            className="flex items-center gap-1.5 text-xs text-zinc-300 bg-emerald-950/40 hover:bg-emerald-950/70 px-3 py-1 rounded-full border border-emerald-500/40 transition cursor-pointer"
+            title="Configure Live Supabase Database & Purge Demo Data"
+          >
+            <Database className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden sm:inline text-[11px] font-mono font-bold text-emerald-300">
+              SUPABASE SYNC
+            </span>
+          </button>
+
           {/* SSE Live Status Indicator */}
           <div className="flex items-center gap-2 text-xs text-zinc-300 bg-zinc-900/90 px-3 py-1 rounded-full border border-zinc-800">
             <span className={`w-2 h-2 rounded-full ${sseConnected ? 'bg-emerald-400 shadow-sm shadow-emerald-400 animate-pulse' : 'bg-emerald-500'}`} />
@@ -139,6 +153,12 @@ export const Navbar: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Supabase Connection & Fake Data Modal */}
+      <SupabaseSyncModal
+        isOpen={showSupabaseModal}
+        onClose={() => setShowSupabaseModal(false)}
+      />
     </header>
   );
 };
