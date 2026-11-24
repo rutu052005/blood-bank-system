@@ -303,26 +303,68 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
   // 4. INVENTORY (Engine 1: DBMS Concurrency & Engine 3: FEFO Expiry)
   // --------------------------------------------------------------------------
   if (endpoint.startsWith('/inventory')) {
-    const parts = endpoint.split('/');
+    const cleanEndpoint = endpoint.split('?')[0];
+    const parts = cleanEndpoint.split('/');
 
     // 4a. Single unit: GET /inventory/:id
     if (parts.length === 3 && parts[2] && options.method !== 'POST') {
       const invId = parts[2];
       if (sb) {
         try {
-          const { data: singleUnit } = await sb.from('blood_inventory').select('*').eq('id', invId).single();
+          const { data: singleUnit } = await sb.from('blood_inventory').select('*').eq('id', invId).maybeSingle();
           if (singleUnit) {
+            // Also fetch holds and movements from Supabase
+            const [holdsRes, movRes] = await Promise.all([
+              sb.from('inventory_holds').select('*').eq('inventory_id', invId),
+              sb.from('inventory_movements').select('*').eq('inventory_id', invId).order('created_at', { ascending: false }),
+            ]);
+
+            const movements = (movRes?.data && movRes.data.length > 0) ? movRes.data : [
+              {
+                id: 'MOV_INIT_' + singleUnit.id,
+                inventory_id: singleUnit.id,
+                movement_type: 'ADD',
+                quantity_change: singleUnit.quantity_total || 5,
+                reference_id: 'INITIAL_STOCK',
+                performed_by: 'U001',
+                notes: `Stock baseline initialized for ${singleUnit.blood_group} ${singleUnit.component}`,
+                created_at: singleUnit.created_at,
+              }
+            ];
+
             return {
               ...singleUnit,
-              hospital_name: mockStore.hospitals.find(h => h.id === singleUnit.hospital_id)?.name || 'Hospital',
+              hospital_name: mockStore.hospitals.find(h => h.id === singleUnit.hospital_id)?.name || 'KLE Hospital',
               available_quantity: Math.max(0, (singleUnit.quantity_total || 0) - (singleUnit.quantity_held || 0) - (singleUnit.quantity_in_transit || 0)),
               tier: singleUnit.expiry_tier || 'VALID',
+              holds: holdsRes?.data || [],
+              movements,
             } as unknown as T;
           }
-        } catch {}
+        } catch (e) {
+          console.warn('[Supabase Single Unit Error]', e);
+        }
       }
       const localUnit = mockStore.inventory.find(i => i.id === invId);
-      if (localUnit) return localUnit as unknown as T;
+      if (localUnit) {
+        return {
+          ...localUnit,
+          holds: (localUnit as any).holds || [],
+          movements: (localUnit as any).movements || [
+            {
+              id: 'MOV_INIT_' + localUnit.id,
+              inventory_id: localUnit.id,
+              movement_type: 'ADD',
+              quantity_change: localUnit.quantity_total,
+              reference_id: 'INITIAL_STOCK',
+              performed_by: 'U001',
+              notes: `Stock baseline initialized for ${localUnit.blood_group} ${localUnit.component}`,
+              created_at: localUnit.created_at,
+            }
+          ],
+        } as unknown as T;
+      }
+      return null as unknown as T;
     }
 
     // 4b. Add inventory: POST /inventory
@@ -409,13 +451,16 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
     if (sb) {
       try {
         const { data: invData, error: invErr } = await sb.from('blood_inventory').select('*').order('created_at', { ascending: false });
-        if (!invErr && invData) {
-          return invData.map((item: any) => ({
+        if (!invErr && invData && invData.length > 0) {
+          const sbIds = new Set(invData.map((i: any) => i.id));
+          const mappedSb = invData.map((item: any) => ({
             ...item,
             hospital_name: mockStore.hospitals.find(h => h.id === item.hospital_id)?.name || 'Hospital',
             available_quantity: Math.max(0, (item.quantity_total || 0) - (item.quantity_held || 0) - (item.quantity_in_transit || 0)),
             tier: item.expiry_tier || 'VALID',
-          })) as unknown as T;
+          }));
+          const nonDupLocal = mockStore.inventory.filter(i => !sbIds.has(i.id));
+          return [...mappedSb, ...nonDupLocal] as unknown as T;
         }
       } catch (err) {
         console.warn('[Supabase Inventory Fetch Error]', err);
@@ -558,19 +603,50 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
       const reqId = reqParts[2];
       if (sb) {
         try {
-          const { data: singleReq } = await sb.from('blood_requests').select('*').eq('id', reqId).single();
+          const { data: singleReq } = await sb.from('blood_requests').select('*').eq('id', reqId).maybeSingle();
           if (singleReq) {
+            let parsedItems = Array.isArray(singleReq.items) ? singleReq.items : [];
+            if (typeof singleReq.items === 'string') {
+              try { parsedItems = JSON.parse(singleReq.items); } catch {}
+            }
+            if (!parsedItems || parsedItems.length === 0) {
+              parsedItems = [{ id: 'ITEM_DEFAULT', request_id: reqId, blood_group: 'O+', component: 'RBC', quantity: 2 }];
+            }
+
+            // Always compute matches so Ranked Matching section is fully populated
+            let matches = Array.isArray(singleReq.matches) && singleReq.matches.length > 0 ? singleReq.matches : [];
+            if (matches.length === 0) {
+              try {
+                matches = await handleMockFallback<any[]>(`/requests/${reqId}/matches`);
+              } catch {}
+            }
+
             return {
               ...singleReq,
-              requesting_hospital_name: mockStore.hospitals.find(h => h.id === singleReq.requesting_hospital_id)?.name || 'Hospital',
-              items: Array.isArray(singleReq.items) ? singleReq.items : (typeof singleReq.items === 'string' ? JSON.parse(singleReq.items) : []),
+              requesting_hospital_name: mockStore.hospitals.find(h => h.id === singleReq.requesting_hospital_id)?.name || 'District Hospital',
+              items: parsedItems,
+              matches: matches,
+              status_history: Array.isArray(singleReq.status_history) ? singleReq.status_history : [],
               effective_score: (singleReq.priority === 'EMERGENCY' ? 100 : singleReq.priority === 'URGENT' ? 50 : 10) + (singleReq.aging_points || 0) + (singleReq.compensation_boost || 0),
             } as unknown as T;
           }
-        } catch {}
+        } catch (e) {
+          console.warn('[Supabase Single Request Error]', e);
+        }
       }
       const localReq = mockStore.requests.find(r => r.id === reqId);
-      if (localReq) return localReq as unknown as T;
+      if (localReq) {
+        let matches = (localReq as any).matches || [];
+        if (!matches || matches.length === 0) {
+          try {
+            matches = await handleMockFallback<any[]>(`/requests/${reqId}/matches`);
+          } catch {}
+        }
+        return {
+          ...localReq,
+          matches: matches,
+        } as unknown as T;
+      }
     }
 
     // 5d. Request matches: GET /requests/:id/matches (Engine 4 Dijkstra + Engine 3 FEFO)
@@ -703,45 +779,93 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
   if (endpoint.startsWith('/transfers')) {
     // 6a. Receive transfer: POST /transfers/:id/receive
     if (endpoint.includes('/receive') && options.method === 'POST') {
-      const transferId = endpoint.split('/')[2];
+      const cleanEndpoint = endpoint.split('?')[0];
+      const transferId = cleanEndpoint.split('/')[2];
       const transfer = mockStore.transfers.find(t => t.id === transferId);
       const receivedAt = new Date().toISOString();
 
       if (sb) {
         try {
-          // 1. Update transfer status
-          await sb.from('transfers').update({ status: 'RECEIVED', received_at: receivedAt }).eq('id', transferId);
-
-          // 2. Fetch transfer row
-          const { data: trfRow } = await sb.from('transfers').select('*').eq('id', transferId).single();
+          // 1. Fetch transfer row if in Supabase
+          const { data: trfRow } = await sb.from('transfers').select('*').eq('id', transferId).maybeSingle();
           const targetTrf = trfRow || transfer;
 
+          if (trfRow) {
+            // Update transfer status in Supabase
+            await sb.from('transfers').update({
+              status: 'RECEIVED',
+              received_at: receivedAt,
+              updated_at: receivedAt,
+            }).eq('id', transferId);
+          }
+
           if (targetTrf) {
-            // Deduct source inventory
-            const { data: invData } = await sb.from('blood_inventory').select('*').eq('id', targetTrf.inventory_id).single();
-            if (invData) {
-              await sb.from('blood_inventory').update({
-                quantity_in_transit: Math.max(0, (invData.quantity_in_transit || 0) - targetTrf.quantity),
-                quantity_total: Math.max(0, invData.quantity_total - targetTrf.quantity),
-              }).eq('id', targetTrf.inventory_id);
+            const bg = targetTrf.blood_group || 'O+';
+            const comp = targetTrf.component || 'RBC';
+            const transferQty = Number(targetTrf.quantity) || 1;
+
+            // 2. Deduct source hospital inventory
+            if (targetTrf.inventory_id) {
+              const { data: invData } = await sb.from('blood_inventory').select('*').eq('id', targetTrf.inventory_id).maybeSingle();
+              if (invData) {
+                await sb.from('blood_inventory').update({
+                  quantity_in_transit: Math.max(0, (invData.quantity_in_transit || 0) - transferQty),
+                  quantity_total: Math.max(0, invData.quantity_total - transferQty),
+                  updated_at: receivedAt,
+                }).eq('id', targetTrf.inventory_id);
+              }
             }
 
-            // Update request status to FULFILLED
-            await sb.from('blood_requests').update({ status: 'FULFILLED', updated_at: receivedAt }).eq('id', targetTrf.request_id);
+            // 3. Add to destination hospital inventory (upsert stock at recipient hospital)
+            const { data: destInv } = await sb.from('blood_inventory')
+              .select('*')
+              .eq('hospital_id', targetTrf.destination_hospital_id)
+              .eq('blood_group', bg)
+              .eq('component', comp)
+              .eq('status', 'AVAILABLE')
+              .maybeSingle();
 
-            // Record movement: TRANSFER_IN
+            if (destInv) {
+              await sb.from('blood_inventory').update({
+                quantity_total: (destInv.quantity_total || 0) + transferQty,
+                updated_at: receivedAt,
+              }).eq('id', destInv.id);
+            } else {
+              await sb.from('blood_inventory').insert([{
+                id: 'INV' + Date.now().toString().slice(-6),
+                hospital_id: targetTrf.destination_hospital_id,
+                blood_group: bg,
+                component: comp,
+                quantity_total: transferQty,
+                quantity_held: 0,
+                quantity_in_transit: 0,
+                collection_date: new Date().toISOString().split('T')[0],
+                expiry_date: new Date(Date.now() + 35 * 86400000).toISOString().split('T')[0],
+                status: 'AVAILABLE',
+                expiry_tier: 'VALID',
+                created_at: receivedAt,
+                updated_at: receivedAt,
+              }]);
+            }
+
+            // 4. Update request status to FULFILLED in Supabase
+            if (targetTrf.request_id) {
+              await sb.from('blood_requests').update({ status: 'FULFILLED', updated_at: receivedAt }).eq('id', targetTrf.request_id);
+            }
+
+            // 5. Record movement: TRANSFER_IN in double-entry ledger
             await sb.from('inventory_movements').insert([{
               id: 'MOV_' + Date.now(),
-              inventory_id: targetTrf.inventory_id,
+              inventory_id: targetTrf.inventory_id || ('INV' + Date.now().toString().slice(-6)),
               movement_type: 'TRANSFER_IN',
-              quantity_change: targetTrf.quantity,
+              quantity_change: transferQty,
               reference_id: transferId,
               performed_by: currentUser.id || 'U002',
-              notes: `Logistics delivery complete: ${targetTrf.quantity} units received at ${targetTrf.destination_hospital_id}`,
+              notes: `Logistics delivery complete: ${transferQty} units ${bg} ${comp} received at ${targetTrf.destination_hospital_id}`,
               created_at: receivedAt,
             }]);
 
-            // Audit log
+            // 6. Audit log in Supabase
             await logAudit(
               'RECEIVE_TRANSFER',
               'TRANSFER',
@@ -749,7 +873,9 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
               {
                 source_hospital_id: targetTrf.source_hospital_id,
                 destination_hospital_id: targetTrf.destination_hospital_id,
-                quantity: targetTrf.quantity,
+                quantity: transferQty,
+                blood_group: bg,
+                component: comp,
                 received_at: receivedAt,
               },
               currentUser.id || 'U002'
@@ -760,15 +886,53 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
         }
       }
 
+      // Synchronize in-memory and persisted local mock store
       if (transfer) {
         transfer.status = 'RECEIVED';
         transfer.received_at = receivedAt;
         const req = mockStore.requests.find(r => r.id === transfer.request_id);
         if (req) req.status = 'FULFILLED';
+
+        // Source hospital deduction
+        const sourceUnit = mockStore.inventory.find(i => i.id === transfer.inventory_id);
+        if (sourceUnit) {
+          sourceUnit.quantity_in_transit = Math.max(0, (sourceUnit.quantity_in_transit || 0) - transfer.quantity);
+          sourceUnit.quantity_total = Math.max(0, sourceUnit.quantity_total - transfer.quantity);
+          sourceUnit.available_quantity = Math.max(0, sourceUnit.quantity_total - (sourceUnit.quantity_held || 0) - (sourceUnit.quantity_in_transit || 0));
+        }
+
+        // Destination hospital intake
+        const destUnit = mockStore.inventory.find(i =>
+          i.hospital_id === transfer.destination_hospital_id &&
+          i.blood_group === transfer.blood_group &&
+          i.component === transfer.component
+        );
+        if (destUnit) {
+          destUnit.quantity_total += transfer.quantity;
+          destUnit.available_quantity = Math.max(0, destUnit.quantity_total - (destUnit.quantity_held || 0) - (destUnit.quantity_in_transit || 0));
+        } else {
+          mockStore.inventory.unshift({
+            id: 'INV' + Date.now().toString().slice(-6),
+            hospital_id: transfer.destination_hospital_id,
+            hospital_name: transfer.destination_hospital_name || 'Destination Hospital',
+            blood_group: (transfer.blood_group || 'O+') as any,
+            component: (transfer.component || 'RBC') as any,
+            quantity_total: transfer.quantity,
+            quantity_held: 0,
+            quantity_in_transit: 0,
+            available_quantity: transfer.quantity,
+            collection_date: new Date().toISOString().split('T')[0],
+            expiry_date: new Date(Date.now() + 35 * 86400000).toISOString().split('T')[0],
+            status: 'AVAILABLE',
+            tier: 'VALID',
+            created_at: receivedAt,
+            updated_at: receivedAt,
+          });
+        }
         mockStore.saveUserState();
       }
 
-      return { success: true, message: 'Transfer received and inventory synchronized' } as unknown as T;
+      return { success: true, message: `Transfer ${transferId} receipt confirmed and inventory synchronized across hospitals.` } as unknown as T;
     }
 
     // 6b. Initiate Transfer: POST /transfers
@@ -863,13 +1027,18 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
       try {
         const { data: trfData, error: trfErr } = await sb.from('transfers').select('*').order('created_at', { ascending: false });
         if (!trfErr && trfData && trfData.length > 0) {
-          return trfData.map((t: any) => ({
+          const sbIds = new Set(trfData.map((t: any) => t.id));
+          const mappedSb = trfData.map((t: any) => ({
             ...t,
-            source_hospital_name: mockStore.hospitals.find(h => h.id === t.source_hospital_id)?.name || 'Source Hospital',
-            destination_hospital_name: mockStore.hospitals.find(h => h.id === t.destination_hospital_id)?.name || 'Destination Hospital',
-          })) as unknown as T;
+            source_hospital_name: mockStore.hospitals.find(h => h.id === t.source_hospital_id)?.name || t.source_hospital_id,
+            destination_hospital_name: mockStore.hospitals.find(h => h.id === t.destination_hospital_id)?.name || t.destination_hospital_id,
+          }));
+          const nonDupLocal = mockStore.transfers.filter(t => !sbIds.has(t.id));
+          return [...mappedSb, ...nonDupLocal] as unknown as T;
         }
-      } catch {}
+      } catch (err) {
+        console.warn('[Supabase Transfers Fetch Error]', err);
+      }
     }
     return mockStore.transfers as unknown as T;
   }

@@ -53,6 +53,8 @@ export interface BloodUnit {
   expiry_date: string;
   status: InventoryStatus;
   tier?: ExpiryTier;
+  holds?: any[];
+  movements?: any[];
   created_at: string;
   updated_at: string;
 }
@@ -78,6 +80,8 @@ export interface BloodRequest {
   compensation_boost: number;
   effective_score?: number;
   items: RequestItem[];
+  matches?: any[];
+  status_history?: any[];
   created_by?: string;
   created_at: string;
   updated_at: string;

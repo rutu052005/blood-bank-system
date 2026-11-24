@@ -211,20 +211,21 @@ export class MockDataStore {
 
   initStore() {
     const isPurged = typeof window !== 'undefined' && localStorage.getItem('purged_fake_data') === 'true';
+    const savedInv = typeof window !== 'undefined' ? localStorage.getItem('user_inventory') : null;
+    const savedReq = typeof window !== 'undefined' ? localStorage.getItem('user_requests') : null;
+    const savedTrf = typeof window !== 'undefined' ? localStorage.getItem('user_transfers') : null;
+
     if (isPurged) {
       // Clean mode: Load only user-created data from localStorage
-      const savedInv = typeof window !== 'undefined' ? localStorage.getItem('user_inventory') : null;
-      const savedReq = typeof window !== 'undefined' ? localStorage.getItem('user_requests') : null;
-      const savedTrf = typeof window !== 'undefined' ? localStorage.getItem('user_transfers') : null;
       this.inventory = savedInv ? JSON.parse(savedInv) : [];
       this.requests = savedReq ? JSON.parse(savedReq) : [];
       this.transfers = savedTrf ? JSON.parse(savedTrf) : [];
       this.alerts = [];
     } else {
-      // Seed default demo data
-      this.inventory = [...MOCK_INVENTORY];
-      this.requests = [...MOCK_REQUESTS];
-      this.transfers = [...MOCK_TRANSFERS];
+      // Seed default demo data merged with user updates
+      this.inventory = savedInv ? JSON.parse(savedInv) : [...MOCK_INVENTORY];
+      this.requests = savedReq ? JSON.parse(savedReq) : [...MOCK_REQUESTS];
+      this.transfers = savedTrf ? JSON.parse(savedTrf) : [...MOCK_TRANSFERS];
       this.alerts = [...MOCK_ALERTS];
     }
   }
