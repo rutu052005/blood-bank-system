@@ -27,6 +27,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { BloodUnit, BloodRequest, Hospital } from '../types/index.js';
+import { DBMSTransactionVisualizer } from './DBMSTransactionVisualizer.js';
 
 export type EngineId = 'inventory-sync' | 'priority-scheduling' | 'web-engine' | 'match-expiry';
 
@@ -370,61 +371,7 @@ export const EngineWorkflowModal: React.FC<EngineWorkflowModalProps> = ({
               {/* 1. INVENTORY SYNC ENGINE                               */}
               {/* ------------------------------------------------------ */}
               {engineId === 'inventory-sync' && (
-                <div className="space-y-5">
-                  <div className="bg-black/50 p-5 rounded-2xl border border-zinc-800 space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div>
-                        <h4 className="text-sm font-black text-white flex items-center gap-2">
-                          <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                          <span>Single-Writer Concurrency & ACID Mutex Simulator</span>
-                        </h4>
-                        <p className="text-xs text-zinc-400 mt-0.5">
-                          Simulate high-concurrency peak load where 10 parallel hospital worker threads attempt simultaneous holds on shared stock.
-                        </p>
-                      </div>
-
-                      <button
-                        onClick={handleRunMutexSimulation}
-                        disabled={mutexRunning}
-                        className="bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black font-black px-5 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition disabled:opacity-50 cursor-pointer shrink-0"
-                      >
-                        {mutexRunning ? (
-                          <>
-                            <RotateCcw className="w-3.5 h-3.5 animate-spin" />
-                            <span>Acquiring Locks...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-3.5 h-3.5 fill-black" />
-                            <span>Simulate 10 Parallel Requests</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-
-                    <div className="bg-zinc-950 p-3.5 rounded-xl border border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
-                      <div>
-                        <span className="text-zinc-500">Central Ledger Invariant: </span>
-                        <span className="text-emerald-400 font-bold">Available = Total - Held - In_Transit</span>
-                      </div>
-                      <div className="text-zinc-400">
-                        Acquisition Order: <span className="text-white font-bold">Ascending Hospital ID (H001 → H005)</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-[#030712] p-4 rounded-xl border border-zinc-800 font-mono text-xs text-zinc-300 space-y-1.5">
-                    <div className="text-[10px] text-zinc-500 font-bold uppercase pb-1 border-b border-zinc-800 flex items-center justify-between">
-                      <span>Real-Time Mutex Acquisition Trace:</span>
-                      <span className="text-emerald-400 font-bold">100% ACID CONSISTENT</span>
-                    </div>
-                    {mutexLogs.map((log, idx) => (
-                      <div key={idx} className="leading-relaxed text-emerald-300">
-                        &gt; {log}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <DBMSTransactionVisualizer />
               )}
 
               {/* ------------------------------------------------------ */}

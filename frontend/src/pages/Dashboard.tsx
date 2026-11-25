@@ -6,6 +6,7 @@ import { EngineWorkflowModal, EngineId } from '../components/EngineWorkflowModal
 import { MatchAndExpiryVisualizer } from '../components/MatchAndExpiryVisualizer.js';
 import { AIDonorPredictor } from '../components/AIDonorPredictor.js';
 import { PrioritySchedulingVisualizer } from '../components/PrioritySchedulingVisualizer.js';
+import { DBMSTransactionVisualizer } from '../components/DBMSTransactionVisualizer.js';
 import { Link } from 'react-router-dom';
 import {
   BarChart,
@@ -503,72 +504,7 @@ export const Dashboard: React.FC = () => {
               {inventorySubTab === 'ml-predictor' ? (
                 <AIDonorPredictor />
               ) : (
-                <div className="space-y-5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-800">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                        <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-400">
-                          IN-PAGE VISUAL WORKSPACE
-                        </span>
-                      </div>
-                      <h3 className="text-xl font-black text-white tracking-tight mt-1 flex items-center gap-2">
-                        <ShieldCheck className="w-6 h-6 text-emerald-400" />
-                        Inventory sync engine: Concurrency Mutex Simulator
-                      </h3>
-                      <p className="text-xs text-zinc-400 mt-0.5">
-                        Single-writer transactional locking with ascending ID acquisition hierarchy.
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={handleRunMutexSimulation}
-                      disabled={mutexRunning}
-                      className="bg-emerald-500 hover:bg-emerald-400 text-black font-black px-5 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition disabled:opacity-50 cursor-pointer"
-                    >
-                      {mutexRunning ? (
-                        <span>Executing 10 Threads...</span>
-                      ) : (
-                        <>
-                          <Zap className="w-4 h-4 fill-black" />
-                          <span>Dispatch 10 Parallel Allocation Threads</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-black/60 p-4 rounded-xl border border-zinc-800">
-                      <div className="text-xs font-mono font-bold text-zinc-400 mb-1">Row Lock Status</div>
-                      <div className="text-xl font-black text-emerald-400 font-mono">EXCLUSIVE (ACID)</div>
-                      <div className="text-[11px] text-zinc-500 mt-1">Single-Writer Mutex: Active</div>
-                    </div>
-
-                    <div className="bg-black/60 p-4 rounded-xl border border-zinc-800">
-                      <div className="text-xs font-mono font-bold text-zinc-400 mb-1">Deadlock Prevention</div>
-                      <div className="text-xl font-black text-white font-mono">ASCENDING ID HIERARCHY</div>
-                      <div className="text-[11px] text-zinc-500 mt-1">H001 &lt; H002 &lt; H003 (No Cycles)</div>
-                    </div>
-
-                    <div className="bg-black/60 p-4 rounded-xl border border-zinc-800">
-                      <div className="text-xs font-mono font-bold text-zinc-400 mb-1">Reserve Safety Invariant</div>
-                      <div className="text-xl font-black text-emerald-400 font-mono">VERIFIED 100%</div>
-                      <div className="text-[11px] text-zinc-500 mt-1">Available = Total - Held - InTransit</div>
-                    </div>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-black border border-zinc-800 font-mono text-xs text-zinc-300 space-y-1.5 max-h-[180px] overflow-y-auto">
-                    <div className="text-[10px] text-zinc-500 uppercase border-b border-zinc-800 pb-1 mb-2 font-bold flex items-center justify-between">
-                      <span>LIVE MUTEX CONCURRENCY TRACE LOG</span>
-                      <span className="text-emerald-400">STATUS: HEALTHY</span>
-                    </div>
-                    {mutexLogs.map((log, idx) => (
-                      <div key={idx} className={idx === 0 ? 'text-emerald-300' : 'text-zinc-400'}>
-                        &gt; {log}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <DBMSTransactionVisualizer />
               )}
 
             </div>

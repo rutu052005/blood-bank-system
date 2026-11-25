@@ -33,6 +33,7 @@ import {
   Activity,
   Box,
 } from 'lucide-react';
+import { DBMSTransactionVisualizer } from '../components/DBMSTransactionVisualizer.js';
 
 // ==============================================================================
 // TYPES & METADATA
@@ -787,6 +788,9 @@ export const DatabaseViewer: React.FC = () => {
       {/* ==================================================================== */}
       {viewMode === 'architecture' && (
         <div className="space-y-6">
+          {/* Spotlight Simple Project Simulation */}
+          <DBMSTransactionVisualizer />
+
           {/* 6 Pillars Selector Tabs */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
             {[

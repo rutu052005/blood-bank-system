@@ -22,6 +22,7 @@ import {
   BookOpen,
   FastForward,
 } from 'lucide-react';
+import { DBMSTransactionVisualizer } from '../components/DBMSTransactionVisualizer.js';
 
 export const EngineControlCenter: React.FC = () => {
   const { advanceTime, resetTime } = useSimClock();
@@ -38,7 +39,7 @@ export const EngineControlCenter: React.FC = () => {
   const [eventsData, setEventsData] = useState<any>(null);
   const [scenarioResults, setScenarioResults] = useState<any[]>([]);
   const [runningScenarios, setRunningScenarios] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'scheduler' | 'matching' | 'expiry' | 'banker' | 'events' | 'scenarios' | 'concept-map'>('scheduler');
+  const [activeTab, setActiveTab] = useState<'dbms-mutex' | 'scheduler' | 'matching' | 'expiry' | 'banker' | 'events' | 'scenarios' | 'concept-map'>('dbms-mutex');
 
   const fetchData = async () => {
     try {
@@ -194,9 +195,10 @@ export const EngineControlCenter: React.FC = () => {
       {/* TABS NAVIGATION */}
       <div className="flex items-center gap-2 border-b border-zinc-800 overflow-x-auto pb-1">
         {[
-          { id: 'scheduler', label: 'Priority Triage Queues' },
-          { id: 'matching', label: 'Smart Route & Match Explainer' },
-          { id: 'expiry', label: 'Freshness & Shelf-Life Tracker' },
+          { id: 'dbms-mutex', label: '1. Inventory Sync (DBMS Mutex)' },
+          { id: 'scheduler', label: '2. Priority Triage Queues (OS)' },
+          { id: 'matching', label: '3. Smart Route Pathfinder (DSA)' },
+          { id: 'expiry', label: '4. Freshness & Shelf-Life Tracker' },
           { id: 'banker', label: 'Reserve Safety Matrix' },
           { id: 'events', label: 'Real-Time System Activity' },
           { id: 'scenarios', label: 'Interactive Workflow Tests' },
@@ -215,6 +217,11 @@ export const EngineControlCenter: React.FC = () => {
           </button>
         ))}
       </div>
+
+      {/* TAB 0: DBMS CONCURRENCY MUTEX SIMULATOR */}
+      {activeTab === 'dbms-mutex' && (
+        <DBMSTransactionVisualizer />
+      )}
 
       {/* TAB 1: MULTILEVEL PRIORITY QUEUE (OS SCHEDULER) */}
       {activeTab === 'scheduler' && (
