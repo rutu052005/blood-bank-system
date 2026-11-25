@@ -306,8 +306,124 @@ async function handleMockFallback<T>(endpoint: string, options: RequestInit = {}
     const cleanEndpoint = endpoint.split('?')[0];
     const parts = cleanEndpoint.split('/');
 
+    // 4-Hold-A. Place Hold: POST /inventory/holds
+    if (cleanEndpoint === '/inventory/holds' && options.method === 'POST') {
+      const data = options.body ? JSON.parse(options.body as string) : {};
+      const holdId = 'HOLD_' + Date.now();
+      const qty = Number(data.quantity) || 1;
+      const ttlMinutes = Number(data.ttl_minutes) || 30;
+      const expiresAt = new Date(Date.now() + ttlMinutes * 60000).toISOString();
+      const createdAt = new Date().toISOString();
+
+      if (sb) {
+        try {
+          // 1. Insert into inventory_holds in Supabase
+          await sb.from('inventory_holds').insert([{
+            id: holdId,
+            request_id: data.request_id || 'REQ_MANUAL',
+            inventory_id: data.inventory_id,
+            quantity: qty,
+            expires_at: expiresAt,
+            status: 'ACTIVE',
+            created_at: createdAt,
+          }]);
+
+          // 2. Increment quantity_held on blood_inventory
+          const { data: invRow } = await sb.from('blood_inventory').select('*').eq('id', data.inventory_id).maybeSingle();
+          if (invRow) {
+            await sb.from('blood_inventory').update({
+              quantity_held: (invRow.quantity_held || 0) + qty,
+              updated_at: createdAt,
+            }).eq('id', data.inventory_id);
+          }
+
+          // 3. Record movement: HOLD
+          await sb.from('inventory_movements').insert([{
+            id: 'MOV_' + Date.now(),
+            inventory_id: data.inventory_id,
+            movement_type: 'HOLD',
+            quantity_change: 0,
+            reference_id: holdId,
+            performed_by: currentUser.id || 'U002',
+            notes: `Placed 2PL reservation hold of ${qty} units for Request ${data.request_id || 'N/A'} (Lease TTL: ${ttlMinutes}m)`,
+            created_at: createdAt,
+          }]);
+
+          // 4. Audit Log
+          await logAudit(
+            'PLACE_HOLD',
+            'HOLD',
+            holdId,
+            { request_id: data.request_id, inventory_id: data.inventory_id, quantity: qty, expires_at: expiresAt },
+            currentUser.id || 'U002'
+          );
+        } catch (e) {
+          console.warn('[Supabase Place Hold Error]', e);
+        }
+      }
+
+      // Update mock store
+      const localUnit = mockStore.inventory.find(i => i.id === data.inventory_id);
+      if (localUnit) {
+        localUnit.quantity_held = (localUnit.quantity_held || 0) + qty;
+        localUnit.available_quantity = Math.max(0, localUnit.quantity_total - (localUnit.quantity_held || 0) - (localUnit.quantity_in_transit || 0));
+        mockStore.saveUserState();
+      }
+
+      return {
+        success: true,
+        hold_id: holdId,
+        expires_at: expiresAt,
+        message: `Reservation hold placed successfully! Valid for ${ttlMinutes} minutes.`
+      } as unknown as T;
+    }
+
+    // 4-Hold-B. Release Hold: POST /inventory/holds/:id/release
+    if (cleanEndpoint.startsWith('/inventory/holds/') && cleanEndpoint.endsWith('/release') && options.method === 'POST') {
+      const holdId = cleanEndpoint.split('/')[3];
+      const releasedAt = new Date().toISOString();
+
+      if (sb) {
+        try {
+          const { data: holdRow } = await sb.from('inventory_holds').select('*').eq('id', holdId).maybeSingle();
+          if (holdRow) {
+            // Update status in inventory_holds
+            await sb.from('inventory_holds').update({ status: 'RELEASED' }).eq('id', holdId);
+
+            // Decrement quantity_held on blood_inventory
+            const { data: invRow } = await sb.from('blood_inventory').select('*').eq('id', holdRow.inventory_id).maybeSingle();
+            if (invRow) {
+              await sb.from('blood_inventory').update({
+                quantity_held: Math.max(0, (invRow.quantity_held || 0) - holdRow.quantity),
+                updated_at: releasedAt,
+              }).eq('id', holdRow.inventory_id);
+            }
+
+            // Record movement: RELEASE
+            await sb.from('inventory_movements').insert([{
+              id: 'MOV_' + Date.now(),
+              inventory_id: holdRow.inventory_id,
+              movement_type: 'RELEASE',
+              quantity_change: 0,
+              reference_id: holdId,
+              performed_by: currentUser.id || 'U002',
+              notes: `Released hold lock ${holdId} (${holdRow.quantity} units unblocked)`,
+              created_at: releasedAt,
+            }]);
+
+            // Audit log
+            await logAudit('RELEASE_HOLD', 'HOLD', holdId, { inventory_id: holdRow.inventory_id, quantity: holdRow.quantity }, currentUser.id || 'U002');
+          }
+        } catch (e) {
+          console.warn('[Supabase Release Hold Error]', e);
+        }
+      }
+
+      return { success: true, message: 'Hold released successfully and stock restored.' } as unknown as T;
+    }
+
     // 4a. Single unit: GET /inventory/:id
-    if (parts.length === 3 && parts[2] && options.method !== 'POST') {
+    if (parts.length === 3 && parts[2] && parts[2] !== 'holds' && options.method !== 'POST') {
       const invId = parts[2];
       if (sb) {
         try {
@@ -1254,6 +1370,9 @@ export const api = {
   },
   getInventoryById: (id: string) => request<any>(`/inventory/${id}`),
   addInventory: (data: any) => request<any>('/inventory', { method: 'POST', body: JSON.stringify(data) }),
+  createHold: (data: { request_id: string; inventory_id: string; quantity: number; ttl_minutes?: number }) =>
+    request<any>('/inventory/holds', { method: 'POST', body: JSON.stringify(data) }),
+  releaseHold: (id: string) => request<any>(`/inventory/holds/${id}/release`, { method: 'POST' }),
 
   // Requests
   getRequests: () => request<any[]>('/requests'),

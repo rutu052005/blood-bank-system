@@ -7,8 +7,9 @@ export const InventoryDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [unit, setUnit] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [releasingId, setReleasingId] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchUnit = () => {
     if (id) {
       setLoading(true);
       api.getInventoryById(id)
@@ -26,7 +27,23 @@ export const InventoryDetail: React.FC = () => {
         })
         .finally(() => setLoading(false));
     }
+  };
+
+  useEffect(() => {
+    fetchUnit();
   }, [id]);
+
+  const handleReleaseHold = async (holdId: string) => {
+    try {
+      setReleasingId(holdId);
+      await api.releaseHold(holdId);
+      fetchUnit();
+    } catch (err: any) {
+      alert(err.message || 'Failed to release hold');
+    } finally {
+      setReleasingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -150,7 +167,18 @@ export const InventoryDetail: React.FC = () => {
                   <span>{h.request_id}</span>
                   <span className="text-amber-600">Qty {h.quantity}</span>
                 </div>
-                <div className="text-[10px] text-slate-500">Expires: {h.expires_at ? new Date(h.expires_at).toLocaleString() : 'N/A'}</div>
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-slate-500">Expires: {h.expires_at ? new Date(h.expires_at).toLocaleTimeString() : 'N/A'}</span>
+                  {h.status === 'ACTIVE' && (
+                    <button
+                      disabled={releasingId === h.id}
+                      onClick={() => handleReleaseHold(h.id)}
+                      className="bg-rose-50 text-rose-700 hover:bg-rose-100 disabled:opacity-50 px-2 py-0.5 rounded border border-rose-200 font-bold transition cursor-pointer"
+                    >
+                      {releasingId === h.id ? 'Releasing...' : 'Release Lock'}
+                    </button>
+                  )}
+                </div>
               </div>
             ))
           )}

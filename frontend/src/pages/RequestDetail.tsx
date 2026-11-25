@@ -6,7 +6,7 @@ import { PriorityBadge } from '../components/PriorityBadge.js';
 import { TimelineVisualizer } from '../components/TimelineVisualizer.js';
 import { MatchDisclaimer } from '../components/MatchDisclaimer.js';
 import { useAuth } from '../context/AuthContext.js';
-import { ArrowLeft, CheckCircle, XCircle, RotateCcw, Truck, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, RotateCcw, Truck, ShieldAlert, Lock, CheckCircle2 } from 'lucide-react';
 
 export const RequestDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +17,8 @@ export const RequestDetail: React.FC = () => {
   const [actionNotes, setActionNotes] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [holdingId, setHoldingId] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const fetchRequestDetail = () => {
     if (id) {
@@ -64,6 +66,26 @@ export const RequestDetail: React.FC = () => {
       fetchRequestDetail();
     } catch (err: any) {
       alert(err.message);
+    }
+  };
+
+  const handlePlaceHold = async (match: MatchExplanation) => {
+    if (!id) return;
+    try {
+      setHoldingId(match.inventory_id);
+      const res = await api.createHold({
+        request_id: id,
+        inventory_id: match.inventory_id,
+        quantity: match.allocated_quantity || 1,
+        ttl_minutes: 30,
+      });
+      setToastMessage(res.message || `2PL Reservation hold placed on Unit ${match.inventory_id}.`);
+      setTimeout(() => setToastMessage(null), 5000);
+      fetchRequestDetail();
+    } catch (err: any) {
+      alert(err.message || 'Failed to place hold');
+    } finally {
+      setHoldingId(null);
     }
   };
 
@@ -141,6 +163,13 @@ export const RequestDetail: React.FC = () => {
         )}
       </div>
 
+      {toastMessage && (
+        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 px-4 py-3 rounded-xl text-xs flex items-center gap-2 font-mono">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* State Machine Timeline */}
       <TimelineVisualizer requestStatus={request.status} />
 
@@ -176,17 +205,35 @@ export const RequestDetail: React.FC = () => {
                   <span className="font-extrabold text-sm text-slate-900">#{idx + 1} {match.hospital_name}</span>
                   <span className="text-xs text-slate-500 font-mono ml-2">(Unit: {match.inventory_id})</span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <span className="font-mono font-bold text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-800">
                     Score: {match.total_score} / 100
                   </span>
                   {hasRole('SYSTEM_ADMIN', 'HOSPITAL_ADMIN', 'INVENTORY_MANAGER', 'REQUEST_MANAGER') && (
-                    <button
-                      onClick={() => handleCreateTransfer(match)}
-                      className="bg-crimson-600 hover:bg-crimson-700 text-white px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm transition"
-                    >
-                      <Truck className="w-3.5 h-3.5" /> Initiate Transfer
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        disabled={holdingId === match.inventory_id}
+                        onClick={() => handlePlaceHold(match)}
+                        className="bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 font-extrabold px-3 py-1 rounded-lg text-xs flex items-center gap-1 shadow-sm transition"
+                      >
+                        {holdingId === match.inventory_id ? (
+                          <>
+                            <div className="w-3 h-3 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+                            Locking...
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="w-3.5 h-3.5" /> Place Hold (2PL)
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleCreateTransfer(match)}
+                        className="bg-crimson-600 hover:bg-crimson-700 text-white px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm transition"
+                      >
+                        <Truck className="w-3.5 h-3.5" /> Initiate Transfer
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
