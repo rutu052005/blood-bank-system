@@ -113,7 +113,7 @@ export const LoginPage: React.FC = () => {
       tag: 'LOCAL BLOOD BANK',
       tagColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
       icon: Droplets,
-      description: 'Appointed by KLE to manage physical blood stock, expiry tiers & trigger AI donor replenishment.',
+      description: 'Appointed by KLE to manage physical blood stock, FEFO expiry tiers & inter-hospital transfers.',
     },
     {
       id: 'priya@demo.local',

@@ -4,7 +4,6 @@ import { BloodUnit, BloodRequest, Transfer, Alert, Hospital } from '../types/ind
 import { PriorityBadge } from '../components/PriorityBadge.js';
 import { EngineWorkflowModal, EngineId } from '../components/EngineWorkflowModal.js';
 import { MatchAndExpiryVisualizer } from '../components/MatchAndExpiryVisualizer.js';
-import { AIDonorPredictor } from '../components/AIDonorPredictor.js';
 import { PrioritySchedulingVisualizer } from '../components/PrioritySchedulingVisualizer.js';
 import { DBMSTransactionVisualizer } from '../components/DBMSTransactionVisualizer.js';
 import { Link } from 'react-router-dom';
@@ -47,8 +46,7 @@ export const Dashboard: React.FC = () => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedEngine, setSelectedEngine] = useState<EngineId | null>(null);
-  const [activeVisualEngine, setActiveVisualEngine] = useState<EngineId>('match-expiry');
-  const [inventorySubTab, setInventorySubTab] = useState<'mutex' | 'ml-predictor'>('ml-predictor');
+  const [activeVisualEngine, setActiveVisualEngine] = useState<EngineId>('inventory-sync');
 
   // In-page visual simulator states for other engines
   const [mutexRunning, setMutexRunning] = useState<boolean>(false);
@@ -468,46 +466,7 @@ export const Dashboard: React.FC = () => {
           )}
 
           {activeVisualEngine === 'inventory-sync' && (
-            <div className="bg-[#090d16] border border-zinc-800 rounded-3xl p-6 shadow-2xl space-y-5">
-              
-              {/* Sub-Tab Navigation for Inventory Sync Engine */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800/80 pb-4">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setInventorySubTab('ml-predictor')}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition flex items-center gap-2 cursor-pointer ${
-                      inventorySubTab === 'ml-predictor'
-                        ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20'
-                        : 'bg-zinc-900 text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>1. AI Donor Replenishment Predictor (ML Model)</span>
-                  </button>
-                  <button
-                    onClick={() => setInventorySubTab('mutex')}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold font-mono transition flex items-center gap-2 cursor-pointer ${
-                      inventorySubTab === 'mutex'
-                        ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20'
-                        : 'bg-zinc-900 text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>2. Mutex Concurrency Simulator (DBMS)</span>
-                  </button>
-                </div>
-                <span className="text-[10px] font-mono text-zinc-500">
-                  {inventorySubTab === 'ml-predictor' ? 'Kaggle UCI Model' : 'Single-Writer Mutex'}
-                </span>
-              </div>
-
-              {inventorySubTab === 'ml-predictor' ? (
-                <AIDonorPredictor />
-              ) : (
-                <DBMSTransactionVisualizer />
-              )}
-
-            </div>
+            <DBMSTransactionVisualizer />
           )}
 
           {activeVisualEngine === 'priority-scheduling' && (
