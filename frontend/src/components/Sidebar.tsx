@@ -34,7 +34,7 @@ export const Sidebar: React.FC = () => {
     { to: '/audit-logs', label: 'Compliance & Audit Logs', icon: ShieldCheck },
     { to: '/hospitals', label: 'Partner Hospitals', icon: Building2 },
     { to: '/users', label: 'Users & Staff', icon: UsersIcon, roles: ['SYSTEM_ADMIN', 'HOSPITAL_ADMIN'] },
-    { to: '/database-viewer', label: 'Records Inspector', icon: Database, roles: ['SYSTEM_ADMIN'] },
+    { to: '/database-viewer', label: 'DBMS Console & Tables', icon: Database, badge: 'DBMS', highlight: true },
     { to: '/settings', label: 'System Settings', icon: Settings, roles: ['SYSTEM_ADMIN'] },
   ];
 
